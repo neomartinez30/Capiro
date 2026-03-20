@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Capiro Blue ──────────────────────────────────────────────── */
+    --capiro-blue-50: 235 240 255;
+    --capiro-blue-100: 214 224 255;
+    --capiro-blue-200: 173 193 255;
+    --capiro-blue-300: 133 163 255;
+    --capiro-blue-400: 92 132 255;
+    --capiro-blue-500: 27 77 255;
+    --capiro-blue-600: 21 61 204;
+    --capiro-blue-700: 16 46 153;
+    --capiro-blue-800: 10 30 102;
+    --capiro-blue-900: 5 15 51;
+
+    /* ── Signal Blue ──────────────────────────────────────────────── */
+    --signal-blue-50: 230 244 255;
+    --signal-blue-100: 204 233 255;
+    --signal-blue-200: 153 211 255;
+    --signal-blue-300: 102 189 255;
+    --signal-blue-400: 51 167 255;
+    --signal-blue-500: 0 145 255;
+    --signal-blue-600: 0 116 204;
+    --signal-blue-700: 0 87 153;
+    --signal-blue-800: 0 58 102;
+    --signal-blue-900: 0 29 51;
+
+    /* ── Cool Gray ────────────────────────────────────────────────── */
+    --cool-gray-50: 248 249 250;
+    --cool-gray-100: 241 243 245;
+    --cool-gray-200: 233 236 239;
+    --cool-gray-300: 222 226 230;
+    --cool-gray-400: 206 212 218;
+    --cool-gray-500: 173 181 189;
+    --cool-gray-600: 134 142 150;
+    --cool-gray-700: 73 80 87;
+    --cool-gray-800: 52 58 64;
+    --cool-gray-900: 33 37 41;
+
+    /* ── Soft White ───────────────────────────────────────────────── */
+    --soft-white-50: 255 255 255;
+    --soft-white-100: 253 253 254;
+    --soft-white-200: 250 251 252;
+    --soft-white-300: 245 247 249;
+    --soft-white-400: 240 242 245;
+    --soft-white-500: 235 238 242;
+
+    /* ── Semantic ─────────────────────────────────────────────────── */
+    --color-success: 18 183 106;
+    --color-warning: 247 144 9;
+    --color-error: 240 68 56;
+    --color-info: 0 145 255;
+
+    /* ── Layout ───────────────────────────────────────────────────── */
+    --sidebar-width: 16rem;
+    --sidebar-collapsed-width: 4rem;
+    --nav-height: 3.5rem;
+    --page-padding: 1.5rem;
+    --content-max-width: 80rem;
+
+    /* ── Radius ───────────────────────────────────────────────────── */
+    --radius-card: 0.75rem;
+    --radius-button: 0.5rem;
+    --radius-input: 0.5rem;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-soft-white-200 text-cool-gray-900 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  * {
+    @apply border-cool-gray-200;
+  }
+}

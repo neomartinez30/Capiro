@@ -1,0 +1,24 @@
+{
+  "name": "@capiro/infra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "cdk": "cdk",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy --all",
+    "deploy:dev": "cdk deploy --all -c env=dev",
+    "deploy:staging": "cdk deploy --all -c env=staging",
+    "deploy:prod": "cdk deploy --all -c env=prod"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.173.2",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "aws-cdk": "^2.173.2"
+  }
+}
