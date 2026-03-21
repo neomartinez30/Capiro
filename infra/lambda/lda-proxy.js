@@ -18,7 +18,7 @@ function makeHttpsRequest(targetUrl, headers) {
       method: 'GET',
       headers: {
         ...headers,
-        'User-Agent': 'aws-lambda'
+        'User-Agent': 'capiro-lda-proxy'
       }
     };
 
@@ -41,12 +41,15 @@ function makeHttpsRequest(targetUrl, headers) {
 
 async function handler(event) {
   try {
-    console.log('Received event:', JSON.stringify(event));
+    console.log('Received request:', event.path, event.httpMethod);
     
-    const { path, queryStringParameters } = event;
+    const { path, queryStringParameters, pathParameters } = event;
     
-    // Strip /api/lda from the path to get the LDA API path
-    let ldaPath = path.replace('/api/lda', '');
+    // Get the requested LDA endpoint
+    // Path comes in as /api/lda/{proxy+} where proxy+ is the path after /api/lda
+    let ldaPath = pathParameters?.proxy || '';
+    
+    // Ensure starts with /
     if (!ldaPath.startsWith('/')) {
       ldaPath = '/' + ldaPath;
     }
@@ -57,7 +60,7 @@ async function handler(event) {
       : "";
     
     const targetUrl = `${LDA_BASE}${ldaPath}${queryString}`;
-    console.log('Target URL:', targetUrl);
+    console.log('Calling LDA API:', targetUrl);
     
     // Make request to LDA API
     const headers = { 
@@ -81,15 +84,29 @@ async function handler(event) {
       };
     }
     
+    // Handle errors
+    if (response.status >= 400) {
+      console.error('LDA API error:', response.status, response.body);
+      return {
+        statusCode: response.status,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        },
+        body: response.body
+      };
+    }
+    
     let body;
     try {
       body = JSON.parse(response.body);
     } catch (e) {
+      console.error('Failed to parse LDA response:', e);
       body = response.body;
     }
     
     return {
-      statusCode: response.status,
+      statusCode: 200,
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
@@ -98,7 +115,7 @@ async function handler(event) {
     };
     
   } catch (err) {
-    console.error('Error:', err);
+    console.error('Error:', err.message, err.stack);
     return {
       statusCode: 500,
       headers: { 
