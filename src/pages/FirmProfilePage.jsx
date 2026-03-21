@@ -25,6 +25,8 @@ export default function FirmProfilePage() {
   const [saving, setSaving] = useState(false);
   const [ldaModalOpen, setLdaModalOpen] = useState(false);
   const [importStatus, setImportStatus] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
 
   const dirty = JSON.stringify(profile) !== JSON.stringify(original);
 
@@ -34,16 +36,25 @@ export default function FirmProfilePage() {
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError("");
+    setSaveSuccess("");
+    console.log("[DEBUG] Save button clicked. Profile:", profile);
     try {
       if (profile.id) {
+        console.log("[DEBUG] Updating existing firm:", profile.id);
         await updateFirmProfile(profile.id, profile);
+        setSaveSuccess(`Firm updated successfully`);
       } else {
+        console.log("[DEBUG] Creating new firm");
         const created = await createFirmProfile(profile);
+        console.log("[DEBUG] Create response:", created);
         setProfile((p) => ({ ...p, id: created.id }));
+        setSaveSuccess(`Firm saved successfully with ID: ${created.id}`);
       }
       setOriginal({ ...profile });
     } catch (err) {
       console.error("Save failed:", err);
+      setSaveError(`Save failed: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -86,6 +97,20 @@ export default function FirmProfilePage() {
         dirty={dirty}
         entityType="firm"
       />
+
+      {saveError && (
+        <div className="profile-page__status profile-page__status--error">
+          {saveError}
+          <button type="button" className="profile-page__status-close" onClick={() => setSaveError("")}>&times;</button>
+        </div>
+      )}
+
+      {saveSuccess && (
+        <div className="profile-page__status profile-page__status--success">
+          {saveSuccess}
+          <button type="button" className="profile-page__status-close" onClick={() => setSaveSuccess("")}>&times;</button>
+        </div>
+      )}
 
       {importStatus && (
         <div className="profile-page__status">
