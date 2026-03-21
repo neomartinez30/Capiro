@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import "../styles/Navbar.css";
-import logoWhite from "/logo-white.png";
 
 export default function Navbar({ onLoginClick }) {
   const [scrolled, setScrolled] = useState(false);
@@ -13,7 +12,7 @@ export default function Navbar({ onLoginClick }) {
 
   return (
     <nav className={`navbar ${scrolled ? "navbar--scrolled" : ""}`}>
-      <img src={logoWhite} alt="Capiro" className="navbar__logo" />
+      <span className="navbar__logo-text" style={{fontSize:"22px",fontWeight:700,color:"#fff",letterSpacing:"-0.5px"}}>Capiro</span>
       <div className="navbar__actions">
         <button className="btn-ghost" onClick={onLoginClick}>Sign In</button>
         <button className="btn-accent" onClick={onLoginClick}>Get Started</button>

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import COGNITO_CONFIG from "../config/cognito";
 import BRAND from "../config/brand";
 import "../styles/LoginModal.css";
-import logoBlack from "/logo-black.png";
 
 export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const [mode, setMode] = useState("login");
@@ -63,7 +62,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         <div className="modal-card__accent-bar" />
         <div className="modal-card__body">
           <div>
-            <img src={logoBlack} alt="Capiro" className="modal__logo" />
+            <span className="modal__logo-text" style={{fontSize:"22px",fontWeight:700,color:"#01226A",letterSpacing:"-0.5px"}}>Capiro</span>
             <h2 className="modal__heading">
               {mode === "login" ? "Welcome back" : "Create your account"}
             </h2>
