@@ -8,10 +8,14 @@
 import AWS_CONFIG from "../config/aws";
 
 // In production, route through our API Gateway proxy to handle auth + rate limits.
-// For development / direct access, call lda.gov directly (unauthenticated, 15 req/min).
-const USE_PROXY = false;
+// For development / direct access, call lda.gov directly (15 req/min unauthenticated or with token).
+// Set USE_PROXY=true to use the lambda proxy (recommended since your key is stored in Secrets Manager).
+const USE_PROXY = true;
 const LDA_DIRECT_BASE = "https://lda.gov/api/v1";
 const PROXY_BASE = `${AWS_CONFIG.apiGateway.endpoint}/api/lda`;
+
+// Optional direct auth token support for local dev (Vite env var): VITE_LDA_API_KEY
+const LDA_API_KEY = import.meta.env.VITE_LDA_API_KEY || "";
 
 function getBase() {
   return USE_PROXY ? PROXY_BASE : LDA_DIRECT_BASE;
@@ -29,9 +33,12 @@ function buildUrl(path, params = {}) {
 
 async function fetchLda(path, params = {}) {
   const url = buildUrl(path, params);
-  const res = await fetch(url, {
-    headers: { Accept: "application/json" },
-  });
+  const headers = { Accept: "application/json" };
+  if (LDA_API_KEY) {
+    headers.Authorization = `Token ${LDA_API_KEY}`;
+  }
+
+  const res = await fetch(url, { headers });
   if (res.status === 429) {
     const retryAfter = res.headers.get("Retry-After");
     throw new Error(`Rate limited. Retry after ${retryAfter}s`);

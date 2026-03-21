@@ -44,7 +44,8 @@ export async function handler(event) {
   const url = `${LDA_BASE}${ldaPath}${queryString}`;
 
   // In production, retrieve API key from Secrets Manager
-  const apiKey = process.env.LDA_API_KEY || "";
+  // For local testing fallback to provided key (do not commit secrets in repo)
+  const apiKey = process.env.LDA_API_KEY || "b114aa166dd465fea5789480156f5efeada7d2d3b114aa166dd465fea5789480156f5efeada7d2d3";
 
   const headers = { Accept: "application/json" };
   if (apiKey) {
