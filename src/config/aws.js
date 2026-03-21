@@ -6,7 +6,7 @@
 const AWS_CONFIG = {
   // Amazon API Gateway — primary data API
   apiGateway: {
-    endpoint: "https://UPDATE-WITH-YOUR-API-ID.execute-api.us-east-1.amazonaws.com/prod",
+    endpoint: "https://fpa4brfyhg.execute-api.us-east-1.amazonaws.com/prod",
     region: "us-east-1",
   },
 
