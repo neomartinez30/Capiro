@@ -1,0 +1,315 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Capiro AWS Infrastructure - API Gateway, Lambda, DynamoDB'
+
+Resources:
+  # DynamoDB Table
+  CapiroOrganizationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: capiro-organizations
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+        - AttributeName: lda_registrant_id
+          AttributeType: N
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+        - IndexName: GSI2-registrantId
+          KeySchema:
+            - AttributeName: lda_registrant_id
+              KeyType: HASH
+            - AttributeName: SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+      BillingMode: PAY_PER_REQUEST
+
+  # Lambda Execution Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: capiro-lambda-execution-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt CapiroOrganizationsTable.Arn
+                  - !Sub '${CapiroOrganizationsTable.Arn}/index/*'
+
+  # Profile API Lambda Function
+  ProfileApiLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: capiro-profile-api
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          const TABLE_NAME = process.env.DYNAMODB_TABLE;
+
+          exports.handler = async (event) => {
+            const { httpMethod, path, pathParameters, body } = event;
+            const segments = path.replace('/api/profiles/', '').split('/');
+            const entityType = segments[0];
+            const entityId = pathParameters?.id;
+
+            try {
+              switch (httpMethod) {
+                case 'GET':
+                  return entityId
+                    ? await getProfile(entityType, entityId)
+                    : await listProfiles(entityType);
+                case 'POST':
+                  return await createProfile(entityType, JSON.parse(body || '{}'));
+                case 'PUT':
+                  return await updateProfile(entityType, entityId, JSON.parse(body || '{}'));
+                default:
+                  return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+              }
+            } catch (error) {
+              return {
+                statusCode: 500,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+                body: JSON.stringify({ error: error.message })
+              };
+            }
+          };
+
+          async function getProfile(entityType, id) {
+            const result = await dynamodb.get({
+              TableName: TABLE_NAME,
+              Key: { PK: `${entityType.toUpperCase()}#${id}`, SK: 'PROFILE' }
+            }).promise();
+
+            return {
+              statusCode: 200,
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+              body: JSON.stringify(result.Item || null)
+            };
+          }
+
+          async function listProfiles(entityType) {
+            const result = await dynamodb.query({
+              TableName: TABLE_NAME,
+              IndexName: 'GSI1',
+              KeyConditionExpression: 'GSI1PK = :pk',
+              ExpressionAttributeValues: { ':pk': `TYPE#${entityType.toUpperCase()}` }
+            }).promise();
+
+            return {
+              statusCode: 200,
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+              body: JSON.stringify({ results: result.Items || [] })
+            };
+          }
+
+          async function createProfile(entityType, data) {
+            const id = `${entityType.toUpperCase()}-${Date.now()}`;
+            const item = {
+              PK: `${entityType.toUpperCase()}#${id}`,
+              SK: 'PROFILE',
+              GSI1PK: `TYPE#${entityType.toUpperCase()}`,
+              GSI1SK: id,
+              id,
+              ...data,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+
+            await dynamodb.put({ TableName: TABLE_NAME, Item: item }).promise();
+            return {
+              statusCode: 201,
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+              body: JSON.stringify(item)
+            };
+          }
+
+          async function updateProfile(entityType, id, data) {
+            const updateExpression = ['updatedAt = :updatedAt'];
+            const expressionAttributeValues = { ':updatedAt': new Date().toISOString() };
+            const expressionAttributeNames = {};
+
+            Object.entries(data).forEach(([key, value]) => {
+              if (key !== 'id' && key !== 'createdAt') {
+                updateExpression.push(`#${key} = :${key}`);
+                expressionAttributeValues[`:${key}`] = value;
+                expressionAttributeNames[`#${key}`] = key;
+              }
+            });
+
+            const result = await dynamodb.update({
+              TableName: TABLE_NAME,
+              Key: { PK: `${entityType.toUpperCase()}#${id}`, SK: 'PROFILE' },
+              UpdateExpression: `SET ${updateExpression.join(', ')}`,
+              ExpressionAttributeValues: expressionAttributeValues,
+              ExpressionAttributeNames: expressionAttributeNames,
+              ReturnValues: 'ALL_NEW'
+            }).promise();
+
+            return {
+              statusCode: 200,
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+              body: JSON.stringify(result.Attributes)
+            };
+          };
+      MemorySize: 256
+      Timeout: 15
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref CapiroOrganizationsTable
+      Role: !GetAtt LambdaExecutionRole.Arn
+
+  # API Gateway
+  CapiroApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: capiro-api
+      Description: 'API Gateway for Capiro application'
+
+  # API Resource: /api
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref CapiroApi
+      ParentId: !GetAtt CapiroApi.RootResourceId
+      PathPart: api
+
+  # API Resource: /api/profiles
+  ProfilesResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref CapiroApi
+      ParentId: !Ref ApiResource
+      PathPart: profiles
+
+  # API Resource: /api/profiles/{id}
+  ProfileIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref CapiroApi
+      ParentId: !Ref ProfilesResource
+      PathPart: '{id}'
+
+  # Method: GET /api/profiles
+  ProfilesGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref CapiroApi
+      ResourceId: !Ref ProfilesResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProfileApiLambda.Arn}/invocations
+
+  # Method: POST /api/profiles
+  ProfilesPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref CapiroApi
+      ResourceId: !Ref ProfilesResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProfileApiLambda.Arn}/invocations
+
+  # Method: GET /api/profiles/{id}
+  ProfileGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref CapiroApi
+      ResourceId: !Ref ProfileIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProfileApiLambda.Arn}/invocations
+
+  # Method: PUT /api/profiles/{id}
+  ProfilePutMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref CapiroApi
+      ResourceId: !Ref ProfileIdResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProfileApiLambda.Arn}/invocations
+
+  # Lambda Permission
+  ProfileApiLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ProfileApiLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CapiroApi}/*/*/*
+
+  # API Deployment
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ProfilesGetMethod
+      - ProfilesPostMethod
+      - ProfileGetMethod
+      - ProfilePutMethod
+    Properties:
+      RestApiId: !Ref CapiroApi
+      StageName: prod
+
+Outputs:
+  ApiGatewayUrl:
+    Description: 'API Gateway endpoint URL'
+    Value: !Sub https://${CapiroApi}.execute-api.${AWS::Region}.amazonaws.com/prod
+    Export:
+      Name: CapiroApiUrl

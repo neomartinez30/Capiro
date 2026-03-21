@@ -8,7 +8,7 @@
 import AWS_CONFIG from "../config/aws";
 
 const API_BASE = `${AWS_CONFIG.apiGateway.endpoint}/api/profiles`;
-const USE_API = false; // Toggle for local dev vs. deployed API
+const USE_API = true; // Toggle for local dev vs. deployed API
 
 // ── In-memory store for dev ───────────────────────────────────
 let localStore = {
