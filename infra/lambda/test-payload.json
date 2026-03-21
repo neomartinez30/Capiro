@@ -1,0 +1,1 @@
+﻿{"path": "/api/lda/registrants/", "queryStringParameters": {"page_size": "1"}, "pathParameters": {"proxy": "registrants/"}, "headers": {"Accept": "application/json"}}
