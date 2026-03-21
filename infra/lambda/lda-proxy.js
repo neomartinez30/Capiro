@@ -3,56 +3,69 @@
 //  Proxies requests to lda.gov API with rate limiting + caching
 // ═══════════════════════════════════════════════════════════════
 
-const LDA_BASE = process.env.LDA_API_BASE_URL || "https://lda.gov/api/v1";
-
-/**
- * Map incoming API Gateway path to LDA API path
- */
-function mapPath(path, pathParams) {
-  // For proxy resource /api/lda/{proxy+}, the pathParams.proxy contains the rest
-  if (pathParams && pathParams.proxy) {
-    const proxyPath = pathParams.proxy;
-    // Remove leading slash if present
-    const cleanPath = proxyPath.startsWith('/') ? proxyPath.substring(1) : proxyPath;
-    return `/${cleanPath}`;
-  }
-  
-  // Fallback for direct path matching
-  const segments = path.replace("/api/lda/", "").split("/");
-  const resource = segments[0]; // registrants, lobbyists, clients, filings, contributions, constants
-
-  if (resource === "constants") {
-    const type = segments[1];
-    const constantMap = {
-      filingtypes: "constants/filing/filingtypes",
-      lobbyingactivityissues: "constants/filing/lobbyingactivityissues",
-      governmententities: "constants/filing/governmententities",
-      countries: "constants/general/countries",
-      states: "constants/general/states",
-      prefixes: "constants/lobbyist/prefixes",
-      suffixes: "constants/lobbyist/suffixes",
-    };
-    return `/${constantMap[type] || `constants/${type}`}/`;
-  }
-
-  const id = segments[1];
-  if (id) {
-    return `/${resource}/${id}/`;
-  }
-  return `/${resource}/`;
-}
+const LDA_BASE = "https://lda.gov/api/v1";
 
 export async function handler(event) {
-  // DEBUG: Return the event to see what API Gateway is sending
-  return {
-    statusCode: 200,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-    body: JSON.stringify({
-      event: event,
-      pathParams: event.pathParameters,
-      proxy: event.pathParameters?.proxy
-    }),
-  };
+  try {
+    const { path, queryStringParameters } = event;
+    
+    // Strip /api/lda from the path to get the LDA API path
+    let ldaPath = path.replace('/api/lda', '');
+    if (!ldaPath.startsWith('/')) {
+      ldaPath = '/' + ldaPath;
+    }
+    
+    // Build the full URL with query string
+    const queryString = queryStringParameters
+      ? "?" + new URLSearchParams(queryStringParameters).toString()
+      : "";
+    
+    const url = `${LDA_BASE}${ldaPath}${queryString}`;
+    
+    // Get API key
+    const apiKey = "b114aa166dd465fea5789480156f5efeada7d2d3";
+    
+    // Make request to LDA API
+    const headers = { 
+      Accept: "application/json",
+      Authorization: `Token ${apiKey}`
+    };
+    
+    const response = await fetch(url, { headers });
+    
+    // Handle rate limiting
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After") || "60";
+      return {
+        statusCode: 429,
+        headers: { 
+          "Content-Type": "application/json", 
+          "Access-Control-Allow-Origin": "*"
+        },
+        body: JSON.stringify({ error: "Rate limited", retryAfter })
+      };
+    }
+    
+    // Get response body
+    const data = await response.json();
+    
+    return {
+      statusCode: response.status,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
+      body: JSON.stringify(data)
+    };
+    
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
+      body: JSON.stringify({ error: err.message })
+    };
+  }
+}
