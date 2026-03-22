@@ -8,6 +8,7 @@ import Hero from "./components/Hero";
 import Features from "./components/Features";
 import Footer from "./components/Footer";
 import LoginModal from "./components/LoginModal";
+import LandingSections from "./components/LandingSections";
 import OnboardingPage from "./pages/OnboardingPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import "./styles/global.css";
@@ -26,8 +27,9 @@ function LandingPage() {
       <GridBackground />
       <Particles />
       <Navbar onLoginClick={() => openLogin("login")} onSignupClick={() => openLogin("signup")} />
-      <Hero onLoginClick={() => openLogin("login")} />
+      <Hero onLoginClick={() => openLogin("signup")} />
       <Features />
+      <LandingSections onLoginClick={() => openLogin("signup")} />
       <Footer />
       <LoginModal
         isOpen={loginOpen}

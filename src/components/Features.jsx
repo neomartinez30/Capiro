@@ -11,32 +11,31 @@ const FEATURES = [
         <polyline points="14 2 14 8 20 8" />
         <line x1="16" y1="13" x2="8" y2="13" />
         <line x1="16" y1="17" x2="8" y2="17" />
-        <polyline points="10 9 9 9 8 9" />
       </svg>
     ),
-    title: "Structured Submissions",
-    desc: "Standardize how legislative information is submitted with intelligent workflows that adapt to each office\u2019s requirements.",
+    title: "AI White Paper Drafting",
+    desc: "Co-write submission documents in-platform. Capiro\u2019s AI pulls from client profiles, PE line data, USASpending history, and prior NDAA language to draft structured white papers that match legislative conventions.",
   },
   {
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={BRAND.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 6v6l4 2" />
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+        <line x1="8" y1="21" x2="16" y2="21" />
+        <line x1="12" y1="17" x2="12" y2="21" />
       </svg>
     ),
-    title: "Automated Processing",
-    desc: "Reduce manual burden for congressional offices with AI-driven categorization, comparison, and decision support.",
+    title: "Multi-Office Submission Routing",
+    desc: "Select target offices from a maintained directory with live deadlines. AI generates per-office submissions with district-specific language, then routes to all offices simultaneously.",
   },
   {
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={BRAND.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0022 16z" />
-        <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-        <line x1="12" y1="22.08" x2="12" y2="12" />
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <polyline points="9 12 11 14 15 10" />
       </svg>
     ),
-    title: "Policy Intelligence",
-    desc: "Build a structured intelligence layer from workflow data that enables faster, better-informed decisions at scale.",
+    title: "Human-in-the-Loop, Always",
+    desc: "Every submission is surfaced for review before delivery. Nothing leaves without your explicit approval. AI handles the mechanical work — you own the final call.",
   },
 ];
 
@@ -45,7 +44,7 @@ export default function Features() {
     <section id="features" className="features">
       <div className="features__header">
         <p className="features__eyebrow">Platform Capabilities</p>
-        <h2 className="features__title">Infrastructure for legislative workflows</h2>
+        <h2 className="features__title">From raw client data to confirmed multi-office submission — in one workflow</h2>
       </div>
       <div className="features__grid">
         {FEATURES.map((f, i) => (
