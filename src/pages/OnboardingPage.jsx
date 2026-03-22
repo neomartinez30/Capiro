@@ -1,43 +1,32 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { registrants, plans } from "../data/ldaData";
+import { plans } from "../data/ldaData";
+import * as api from "../services/api";
 import "../styles/Onboarding.css";
 
 /* ──────────────────────────────────────────────────────────
    LDA Firm Search — calls the real Senate LDA API via
-   our Lambda proxy, with fallback to local mock data.
+   our Lambda proxy, stores firm data in DynamoDB.
    ────────────────────────────────────────────────────────── */
-const LDA_PROXY_URL = "https://qzisgoeehkjqvg2vu2qfpm6jki0czheo.lambda-url.us-east-1.on.aws/";
 
 const searchLDAFirms = async (query) => {
   if (!query || query.length < 2) return [];
 
-  // Try real LDA API proxy first
   try {
-    const res = await fetch(`${LDA_PROXY_URL}?search=${encodeURIComponent(query)}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.results && data.results.length > 0) {
-        return data.results.map(r => ({
-          ...r,
-          id: r.id || "lda_" + (r.ldaRegistrationId || Math.random().toString(36).slice(2, 10)),
-          activeClients: null, // not available from public API
-        }));
-      }
+    const data = await api.searchFirms(query);
+    if (data.results && data.results.length > 0) {
+      return data.results.map(r => ({
+        ...r,
+        id: r.id || "lda_" + (r.ldaRegistrationId || Math.random().toString(36).slice(2, 10)),
+        activeClients: null,
+      }));
     }
   } catch {
-    // Proxy not deployed yet or network error — fall through to mock
+    // Proxy not available — return empty
   }
 
-  // Fallback: search local mock data
-  const q = query.toLowerCase();
-  return registrants.filter(
-    (r) =>
-      r.name.toLowerCase().includes(q) ||
-      r.ldaRegistrationId.toLowerCase().includes(q) ||
-      r.contactName.toLowerCase().includes(q)
-  );
+  return [];
 };
 
 const OnboardingPage = () => {
@@ -51,6 +40,7 @@ const OnboardingPage = () => {
   const [teamMembers, setTeamMembers] = useState([{ email: "", role: "Lobbyist" }]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [scanError, setScanError] = useState(null);
+  const [setupLoading, setSetupLoading] = useState(false);
 
   // LDA search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -165,20 +155,41 @@ const OnboardingPage = () => {
     if (step > 1) setStep(step - 1);
   }, [step]);
 
-  const handleComplete = useCallback(() => {
-    const orgData = {
-      id: selectedFirm?.id || "org_" + Math.random().toString(36).slice(2, 10),
-      name: firmData.name,
-      website: firmData.website,
-      address: firmData.address,
-      description: firmData.description,
-      phone: firmData.phone,
-      ldaRegistrationId: firmData.ldaRegistrationId,
-      plan: selectedPlan,
-      teamMembers: teamMembers.filter((m) => m.email.trim()),
-      createdAt: new Date().toISOString(),
-    };
-    completeOnboarding(orgData);
+  const handleComplete = useCallback(async () => {
+    // Generate a stable firmId from the LDA registrant ID or random
+    const firmId = selectedFirm?.id
+      ? `firm_${selectedFirm.id}`
+      : "firm_" + Math.random().toString(36).slice(2, 10);
+
+    const ldaRegistrantId = selectedFirm?.ldaRegistrationId || selectedFirm?.id || null;
+
+    setSetupLoading(true);
+
+    // Call backend to store firm + pull LDA data (clients, lobbyists, topics)
+    try {
+      await api.setupFirm({
+        firmId,
+        ldaRegistrantId,
+        firmData: {
+          name: firmData.name,
+          website: firmData.website,
+          address: firmData.address,
+          description: firmData.description,
+          phone: firmData.phone,
+          ldaRegistrationId: firmData.ldaRegistrationId,
+          contactName: firmData.contactName,
+          plan: selectedPlan,
+          teamMembers: teamMembers.filter((m) => m.email.trim()),
+        },
+      });
+    } catch (err) {
+      console.error("Failed to set up firm:", err);
+      // Continue anyway — user can still use the app
+    } finally {
+      setSetupLoading(false);
+    }
+
+    completeOnboarding({ id: firmId, name: firmData.name });
     navigate("/app");
   }, [firmData, selectedPlan, teamMembers, selectedFirm, completeOnboarding, navigate]);
 
@@ -583,8 +594,12 @@ const OnboardingPage = () => {
             </>
           )}
           {step === 5 && (
-            <button onClick={handleComplete} className="btn-primary btn-large">
-              Go to Dashboard
+            <button onClick={handleComplete} className="btn-primary btn-large" disabled={setupLoading}>
+              {setupLoading ? (
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span className="spinner" /> Setting up your firm...
+                </span>
+              ) : "Go to Dashboard"}
             </button>
           )}
         </div>

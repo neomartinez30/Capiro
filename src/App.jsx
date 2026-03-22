@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { FirmDataProvider } from "./context/FirmDataContext";
 import GridBackground from "./components/GridBackground";
 import Particles from "./components/Particles";
 import Navbar from "./components/Navbar";
@@ -68,7 +69,11 @@ export default function App() {
             <ProtectedRoute><OnboardingPage /></ProtectedRoute>
           } />
           <Route path="/app/*" element={
-            <OnboardingGuard><DashboardLayout /></OnboardingGuard>
+            <OnboardingGuard>
+              <FirmDataProvider>
+                <DashboardLayout />
+              </FirmDataProvider>
+            </OnboardingGuard>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
