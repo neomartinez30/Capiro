@@ -8,6 +8,7 @@ function getDevUser() {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
   const dev = params.get("dev");
+  console.log("[AuthContext] getDevUser called, dev=", dev, "href=", window.location.href);
   if (!dev) return null;
   const base = {
     id: "usr_dev001", email: "neo@capiro.ai", name: "Neo Capiro",
