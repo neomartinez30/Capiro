@@ -3,18 +3,11 @@ import COGNITO_CONFIG from "../config/cognito";
 
 const AuthContext = createContext(null);
 
-// Debug: mark module as loaded
-if (typeof window !== "undefined") {
-  window.__authModuleLoaded = true;
-  window.__devParam = new URLSearchParams(window.location.search).get("dev");
-}
-
 // Dev auto-login: add ?dev=onboarding or ?dev=dashboard to URL
 function getDevUser() {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
   const dev = params.get("dev");
-  console.log("[AuthContext] getDevUser called, dev=", dev, "href=", window.location.href);
   if (!dev) return null;
   const base = {
     id: "usr_dev001", email: "neo@capiro.ai", name: "Neo Capiro",
