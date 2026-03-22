@@ -16,8 +16,10 @@ import "./styles/global.css";
 function LandingPage() {
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [loginMode, setLoginMode] = React.useState("login");
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
+  // While checking for existing Cognito session, show nothing (prevents flash)
+  if (loading) return <div style={{ minHeight: "100vh", background: "var(--lp-bg, #0a1628)" }} />;
   if (user) return <Navigate to={user.orgId ? "/app" : "/onboarding"} replace />;
 
   const openLogin = (mode = "login") => { setLoginMode(mode); setLoginOpen(true); };
@@ -41,13 +43,15 @@ function LandingPage() {
 }
 
 function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return <div style={{ minHeight: "100vh", background: "var(--bg, #F4F6F8)" }} />;
   if (!user) return <Navigate to="/" replace />;
   return children;
 }
 
 function OnboardingGuard({ children }) {
-  const { user, isNewUser } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return <div style={{ minHeight: "100vh", background: "var(--bg, #F4F6F8)" }} />;
   if (!user) return <Navigate to="/" replace />;
   // If user has no org, force onboarding (unless already there)
   if (!user.orgId) return <Navigate to="/onboarding" replace />;

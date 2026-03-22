@@ -4,6 +4,11 @@
 // ═══════════════════════════════════════════════════════════════
 
 const INTEGRATIONS = {
+  // LDA Senate API — registrant search via Lambda proxy
+  ldaProxy: {
+    baseUrl: "https://qzisgoeehkjqvg2vu2qfpm6jki0czheo.lambda-url.us-east-1.on.aws/",
+  },
+
   // Congress.gov API — bill tracking, committee data
   congressGov: {
     apiKey: "YOUR_CONGRESS_GOV_API_KEY",

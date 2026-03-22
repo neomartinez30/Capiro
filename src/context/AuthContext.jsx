@@ -1,93 +1,170 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { Amplify } from "aws-amplify";
+import { signIn as amplifySignIn, signUp as amplifySignUp, signOut as amplifySignOut, getCurrentUser, fetchUserAttributes, confirmSignUp as amplifyConfirmSignUp } from "aws-amplify/auth";
 import COGNITO_CONFIG from "../config/cognito";
+
+// ── Configure Amplify ──────────────────────────────────────────
+Amplify.configure({
+  Auth: {
+    Cognito: {
+      userPoolId: COGNITO_CONFIG.userPoolId,
+      userPoolClientId: COGNITO_CONFIG.userPoolWebClientId,
+    },
+  },
+});
 
 const AuthContext = createContext(null);
 
-// Dev auto-login: add ?dev=onboarding or ?dev=dashboard to URL
-function getDevUser() {
-  if (typeof window === "undefined") return null;
-  const params = new URLSearchParams(window.location.search);
-  const dev = params.get("dev");
-  if (!dev) return null;
-  const base = {
-    id: "usr_dev001", email: "neo@capiro.ai", name: "Neo Capiro",
-    role: "firm_admin", tenantId: "tenant_demo_001",
-    initials: "NC", createdAt: new Date().toISOString(),
+// Helper: build user object from Cognito attributes
+function buildUser(cognitoUser, attributes) {
+  const email = attributes?.email || cognitoUser?.signInDetails?.loginId || "";
+  const name = attributes?.name || email.split("@")[0].replace(/\./g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  return {
+    id: cognitoUser?.userId || cognitoUser?.username || "usr_" + Math.random().toString(36).slice(2, 10),
+    email,
+    name,
+    role: "firm_admin",
+    tenantId: "tenant_" + (cognitoUser?.userId || "default").slice(0, 8),
+    orgId: null, // null until onboarding completes
+    initials: name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2),
+    createdAt: new Date().toISOString(),
   };
-  if (dev === "onboarding") return { ...base, orgId: null };
-  if (dev === "dashboard") return { ...base, orgId: "reg_001", orgName: "Capstone Government Affairs" };
-  return null;
 }
 
-// Simulated Cognito auth — replace with aws-amplify/auth in production
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [confirmationPending, setConfirmationPending] = useState(null); // email awaiting confirmation
 
-  // Dev auto-login via useEffect (runs after mount, more reliable in dev)
+  // Check for existing session on mount
   useEffect(() => {
-    if (user) return; // already logged in
-    const devUser = getDevUser();
-    if (devUser) {
-      console.log("[AuthContext] Dev auto-login:", devUser.orgId ? "dashboard" : "onboarding");
-      setUser(devUser);
+    checkCurrentUser();
+  }, []);
+
+  async function checkCurrentUser() {
+    try {
+      const cognitoUser = await getCurrentUser();
+      const attributes = await fetchUserAttributes();
+      const appUser = buildUser(cognitoUser, attributes);
+      // Restore orgId from localStorage if previously onboarded
+      const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
+      if (savedOrg) {
+        try {
+          const org = JSON.parse(savedOrg);
+          appUser.orgId = org.id;
+          appUser.orgName = org.name;
+        } catch {}
+      }
+      setUser(appUser);
+    } catch {
+      // No session
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   const signIn = useCallback(async ({ email, password }) => {
     setLoading(true);
-    // TODO: const { isSignedIn } = await signIn({ username: email, password });
-    console.log(`[Cognito] signIn: ${email} → Pool: ${COGNITO_CONFIG.userPoolId}`);
-    await new Promise((r) => setTimeout(r, 1200));
-    const mockUser = {
-      id: "usr_" + Math.random().toString(36).slice(2, 10),
-      email,
-      name: email.split("@")[0].replace(/\./g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      role: "lobbyist",
-      tenantId: "tenant_demo_001",
-      orgId: null, // null means needs onboarding
-      initials: email.slice(0, 2).toUpperCase(),
-      createdAt: new Date().toISOString(),
-    };
-    setUser(mockUser);
-    setIsNewUser(false);
-    setLoading(false);
-    return mockUser;
+    try {
+      const result = await amplifySignIn({ username: email, password });
+
+      if (result.nextStep?.signInStep === "CONFIRM_SIGN_UP") {
+        setConfirmationPending(email);
+        setLoading(false);
+        throw new Error("CONFIRM_SIGN_UP");
+      }
+
+      const cognitoUser = await getCurrentUser();
+      const attributes = await fetchUserAttributes();
+      const appUser = buildUser(cognitoUser, attributes);
+
+      // Restore org
+      const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
+      if (savedOrg) {
+        try {
+          const org = JSON.parse(savedOrg);
+          appUser.orgId = org.id;
+          appUser.orgName = org.name;
+        } catch {}
+      }
+
+      setUser(appUser);
+      setIsNewUser(false);
+      setLoading(false);
+      return appUser;
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
   }, []);
 
   const signUp = useCallback(async ({ email, password, name }) => {
     setLoading(true);
-    console.log(`[Cognito] signUp: ${name} <${email}>`);
-    await new Promise((r) => setTimeout(r, 1500));
-    const mockUser = {
-      id: "usr_" + Math.random().toString(36).slice(2, 10),
-      email,
-      name,
-      role: "firm_admin",
-      tenantId: "tenant_" + Math.random().toString(36).slice(2, 8),
-      orgId: null, // needs onboarding
-      initials: name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2),
-      createdAt: new Date().toISOString(),
-    };
-    setUser(mockUser);
-    setIsNewUser(true);
-    setLoading(false);
-    return mockUser;
+    try {
+      const result = await amplifySignUp({
+        username: email,
+        password,
+        options: { userAttributes: { email, name } },
+      });
+
+      if (!result.isSignUpComplete) {
+        // Need email confirmation
+        setConfirmationPending(email);
+        setLoading(false);
+        return { needsConfirmation: true, email };
+      }
+
+      // Auto-sign in after signup if auto-confirmed
+      const appUser = await signIn({ email, password });
+      setIsNewUser(true);
+      return appUser;
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
+  }, [signIn]);
+
+  const confirmSignUp = useCallback(async ({ email, code }) => {
+    setLoading(true);
+    try {
+      await amplifyConfirmSignUp({ username: email, confirmationCode: code });
+      setConfirmationPending(null);
+      setLoading(false);
+      return true;
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
   }, []);
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    try {
+      await amplifySignOut();
+    } catch {
+      // Ignore errors on sign out
+    }
     setUser(null);
     setIsNewUser(false);
+    setConfirmationPending(null);
   }, []);
 
   const completeOnboarding = useCallback((orgData) => {
-    setUser((prev) => ({ ...prev, orgId: orgData.id, orgName: orgData.name }));
+    setUser(prev => {
+      const updated = { ...prev, orgId: orgData.id, orgName: orgData.name };
+      // Persist org selection
+      localStorage.setItem(`capiro_org_${prev.email}`, JSON.stringify({ id: orgData.id, name: orgData.name }));
+      return updated;
+    });
     setIsNewUser(false);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isNewUser, signIn, signUp, signOut, completeOnboarding }}>
+    <AuthContext.Provider value={{
+      user, loading, isNewUser, confirmationPending,
+      signIn, signUp, signOut, confirmSignUp, completeOnboarding,
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -5,15 +5,32 @@ import { registrants, plans } from "../data/ldaData";
 import "../styles/Onboarding.css";
 
 /* ──────────────────────────────────────────────────────────
-   LDA Firm Search — simulates calling the Senate LDA API
-   GET /api/v1/registrants/?search=<query>
-   In production, replace with actual fetch to your backend
-   which proxies https://lda.senate.gov/api/v1/registrants/
+   LDA Firm Search — calls the real Senate LDA API via
+   our Lambda proxy, with fallback to local mock data.
    ────────────────────────────────────────────────────────── */
+const LDA_PROXY_URL = "https://qzisgoeehkjqvg2vu2qfpm6jki0czheo.lambda-url.us-east-1.on.aws/";
+
 const searchLDAFirms = async (query) => {
-  // Simulate network delay (300-600ms like a real API)
-  await new Promise((r) => setTimeout(r, 350 + Math.random() * 250));
   if (!query || query.length < 2) return [];
+
+  // Try real LDA API proxy first
+  try {
+    const res = await fetch(`${LDA_PROXY_URL}?search=${encodeURIComponent(query)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        return data.results.map(r => ({
+          ...r,
+          id: r.id || "lda_" + (r.ldaRegistrationId || Math.random().toString(36).slice(2, 10)),
+          activeClients: null, // not available from public API
+        }));
+      }
+    }
+  } catch {
+    // Proxy not deployed yet or network error — fall through to mock
+  }
+
+  // Fallback: search local mock data
   const q = query.toLowerCase();
   return registrants.filter(
     (r) =>
