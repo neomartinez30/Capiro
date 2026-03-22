@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import { Topbar, LiveFeedPanel } from "../components/dashboard";
 import DashboardHome from "./DashboardHome";
 import EntitiesPage from "./EntitiesPage";
+import LobbyistsPage from "./LobbyistsPage";
+import FirmProfilePage from "./FirmProfilePage";
 import SubmissionsPage from "./SubmissionsPage";
 import OfficesPage from "./OfficesPage";
 import SettingsPage from "./SettingsPage";
@@ -12,7 +14,9 @@ import "../styles/Dashboard.css";
 
 const NAV_ITEMS = [
   { id: "dashboard",   path: "",             label: "Dashboard",      icon: "grid" },
+  { id: "firm",        path: "firm",         label: "Firm",           icon: "building" },
   { id: "entities",    path: "entities",     label: "Clients",        icon: "building" },
+  { id: "lobbyists",   path: "lobbyists",    label: "Lobbyists",      icon: "users" },
   { id: "submissions", path: "submissions",  label: "Submissions",    icon: "file" },
   { id: "offices",     path: "offices",      label: "Offices",        icon: "flag" },
   { id: "settings",    path: "settings",     label: "Settings",       icon: "settings" },
