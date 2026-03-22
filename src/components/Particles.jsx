@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import "../styles/Background.css";
 
-export default function Particles({ count = 20 }) {
+export default function Particles({ count = 12 }) {
   const particles = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({

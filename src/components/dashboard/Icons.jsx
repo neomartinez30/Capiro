@@ -62,13 +62,16 @@ export function IconRss({ size = 16, color = "currentColor" }) {
 export function IconMail({ size = 18, color = "currentColor" }) {
   return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>);
 }
+export function IconUsers({ size = 18, color = "currentColor" }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>);
+}
 
 const ICON_MAP = {
   grid: IconGrid, building: IconBuilding, calendar: IconCalendar, flag: IconFlag,
   file: IconFile, eye: IconEye, workflow: IconWorkflow, chart: IconChart,
   sparkle: IconSparkle, settings: IconSettings, search: IconSearch, bell: IconBell,
   plus: IconPlus, help: IconHelp, chevron: IconChevronDown, check: IconCheck,
-  arrowUp: IconArrowUp, arrowDown: IconArrowDown, rss: IconRss, mail: IconMail,
+  arrowUp: IconArrowUp, arrowDown: IconArrowDown, rss: IconRss, mail: IconMail, users: IconUsers,
 };
 
 export default function Icon({ name, size, color }) {

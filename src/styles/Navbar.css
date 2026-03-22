@@ -1,4 +1,5 @@
-/* ═══ Navbar — Design System ═══ */
+/* ═══ Navbar — Institutional, Restrained ═══ */
+
 .navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   padding: 0 var(--sp-8);
@@ -7,48 +8,71 @@
   transition: background var(--duration-med) ease, backdrop-filter var(--duration-med) ease, box-shadow var(--duration-med) ease;
 }
 .navbar--scrolled {
-  background: rgba(1, 34, 106, 0.92);
+  background: rgba(10, 22, 40, 0.92);
   backdrop-filter: blur(24px);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.06);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04);
 }
-.navbar__logo { height: 22px; animation: fadeSlideUp 0.5s ease both; }
-.navbar__actions { display: flex; align-items: center; gap: var(--sp-3); }
 
-/* Ghost button (navbar) */
+/* Nav links */
+.navbar__links {
+  display: flex; align-items: center; gap: var(--sp-8);
+}
+.navbar__link {
+  background: none; border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px; font-weight: 500;
+  font-family: var(--font-system);
+  cursor: pointer;
+  transition: color var(--duration-fast);
+  padding: 0;
+}
+.navbar__link:hover {
+  color: rgba(255,255,255,0.85);
+}
+
+/* Actions */
+.navbar__actions {
+  display: flex; align-items: center; gap: var(--sp-3);
+}
+
+/* Ghost button */
 .navbar .btn-ghost {
-  padding: 7px 16px;
+  padding: 8px 18px;
   border-radius: var(--radius-md);
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.65);
   font-size: 13px; font-weight: 500;
   font-family: var(--font-system);
   cursor: pointer;
   transition: all var(--duration-fast);
 }
 .navbar .btn-ghost:hover {
-  border-color: rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.04);
   color: #fff;
 }
 
-/* Accent button (navbar) */
+/* Accent button — Waitlist */
 .navbar .btn-accent {
-  padding: 7px 16px;
+  padding: 8px 20px;
   border-radius: var(--radius-md);
   background: var(--signal-blue);
   border: none;
   color: #fff;
-  font-size: 13px; font-weight: 500;
+  font-size: 13px; font-weight: 600;
   font-family: var(--font-system);
   cursor: pointer;
   transition: all var(--duration-fast);
-  box-shadow: 0 2px 12px rgba(58,111,247,0.25);
+  box-shadow: 0 2px 12px rgba(58,111,247,0.2);
 }
 .navbar .btn-accent:hover {
-  background: #5080FF;
+  background: #4F83FF;
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(58,111,247,0.35);
+  box-shadow: 0 4px 20px rgba(58,111,247,0.3);
 }
 
-@media (max-width: 600px) { .navbar { padding: 0 var(--sp-4); } }
+@media (max-width: 768px) {
+  .navbar { padding: 0 var(--sp-4); }
+  .navbar__links { display: none; }
+}

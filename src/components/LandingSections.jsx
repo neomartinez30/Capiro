@@ -340,20 +340,49 @@ function Pricing({ onLoginClick }) {
 }
 
 /* ── Final CTA ── */
-function FinalCTA({ onLoginClick }) {
+function FinalCTA() {
+  const [email, setEmail] = React.useState("");
+  const [submitted, setSubmitted] = React.useState(false);
+
+  const handleWaitlist = (e) => {
+    e.preventDefault();
+    if (email.trim()) setSubmitted(true);
+  };
+
   return (
     <section id="get-started" className="ls-section ls-cta">
       <div className="ls-container" style={{ textAlign: "center" }}>
-        <p className="ls-label ls-label--gold">Get Started</p>
-        <h2 className="ls-title">The 60-second demo moment speaks for itself.</h2>
-        <p className="ls-body" style={{ margin: "0 auto 44px", color: "rgba(255,255,255,0.55)" }}>
-          A lobbyist selects fifteen congressional offices, sees pre-populated submissions tailored
-          to each, and submits to all of them simultaneously. That is what Capiro recovers.
+        <p className="ls-label ls-label--accent">Early Access</p>
+        <h2 className="ls-title">Fifteen offices. One workflow. Every field pre-populated.</h2>
+        <p className="ls-body" style={{ margin: "0 auto 44px", color: "rgba(255,255,255,0.5)" }}>
+          Join the waitlist for early access to the platform that recovers
+          your submission season. No credit card required.
         </p>
-        <div className="ls-cta-buttons">
-          <button className="btn-primary-lg" onClick={onLoginClick}>Start for Free</button>
-          <button className="btn-secondary-lg" onClick={onLoginClick}>Request a Demo</button>
-        </div>
+        {!submitted ? (
+          <form className="waitlist-form" onSubmit={handleWaitlist} style={{ maxWidth: 480, margin: "0 auto" }}>
+            <input
+              type="email"
+              className="waitlist-input"
+              placeholder="Enter your work email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <button type="submit" className="waitlist-btn">
+              Join the Waitlist
+            </button>
+          </form>
+        ) : (
+          <div className="waitlist-confirmed">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>You&rsquo;re on the list. We&rsquo;ll be in touch.</span>
+          </div>
+        )}
+        <p className="waitlist-note" style={{ marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+          Early access opens Q2 2026
+        </p>
       </div>
     </section>
   );
@@ -371,7 +400,7 @@ export default function LandingSections({ onLoginClick }) {
       <YearRound />
       <Testimonials />
       <Pricing onLoginClick={onLoginClick} />
-      <FinalCTA onLoginClick={onLoginClick} />
+      <FinalCTA />
     </>
   );
 }
