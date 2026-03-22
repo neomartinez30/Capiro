@@ -7,6 +7,7 @@ import EntitiesPage from "./EntitiesPage";
 import LobbyistsPage from "./LobbyistsPage";
 import FirmProfilePage from "./FirmProfilePage";
 import SubmissionsPage from "./SubmissionsPage";
+import SubmissionWizard from "./SubmissionWizard";
 import OfficesPage from "./OfficesPage";
 import SettingsPage from "./SettingsPage";
 import Icon from "../components/dashboard/Icons";
@@ -108,6 +109,7 @@ export default function DashboardLayout() {
               <Route path="entities" element={<EntitiesPage />} />
               <Route path="lobbyists" element={<LobbyistsPage />} />
               <Route path="submissions" element={<SubmissionsPage />} />
+              <Route path="submissions/new" element={<SubmissionWizard />} />
               <Route path="offices" element={<OfficesPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/app" replace />} />

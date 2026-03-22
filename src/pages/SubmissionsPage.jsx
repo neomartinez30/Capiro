@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useFirmData } from "../hooks/useFirmData";
 import "../styles/Submissions.css";
 
@@ -241,6 +242,7 @@ const SubmissionDetailPanel = ({ submission, onClose }) => {
 };
 
 export default function SubmissionsPage() {
+  const navigate = useNavigate();
   const { submissions, clients, topics, allOffices: offices } = useFirmData();
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
@@ -266,7 +268,7 @@ export default function SubmissionsPage() {
           <h1 className="submissions-header__title">Submissions</h1>
           <span className="submissions-header__badge">{filteredSubmissions.length}</span>
         </div>
-        <button className="btn btn--primary">
+        <button className="btn btn--primary" onClick={() => navigate("/app/submissions/new")}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
