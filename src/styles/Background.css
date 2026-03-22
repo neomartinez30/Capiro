@@ -1,9 +1,9 @@
 /* Background — gradient, grid overlay, glow orbs, particles */
 .bg-canvas { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.bg-gradient { position: absolute; inset: 0; background: linear-gradient(175deg, #01226A 0%, #011845 45%, #000D2E 100%); }
+.bg-gradient { position: absolute; inset: 0; background: linear-gradient(175deg, var(--capiro-blue) 0%, #011845 45%, #000D2E 100%); }
 .bg-grid { position: absolute; inset: 0; opacity: 0.04; }
 .bg-orb { position: absolute; border-radius: 50%; pointer-events: none; }
 .bg-orb--bottom { bottom: -20%; right: -10%; width: 700px; height: 700px; background: radial-gradient(circle, rgba(58, 111, 247, 0.08), transparent 70%); filter: blur(80px); }
 .bg-orb--top { top: -15%; left: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(58, 111, 247, 0.06), transparent 70%); filter: blur(60px); }
 .particles-canvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
-.particle { position: absolute; border-radius: 50%; background: var(--brand-accent); }
+.particle { position: absolute; border-radius: 50%; background: var(--signal-blue); }

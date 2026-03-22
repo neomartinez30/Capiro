@@ -20,15 +20,25 @@ export default function Sidebar({ active = "dashboard", onNav }) {
       <div className="sidebar__logo">Capiro</div>
       <nav className="sidebar__nav">
         {NAV_ITEMS.map((n) => (
-          <div key={n.id} className={`sidebar__item${n.id === active ? " sidebar__item--active" : ""}`} onClick={() => onNav?.(n.id)}>
+          <div
+            key={n.id}
+            className={`sidebar__item${n.id === active ? " sidebar__item--active" : ""}`}
+            onClick={() => onNav?.(n.id)}
+          >
             <Icon name={n.icon} size={18} color={n.id === active ? "#fff" : "rgba(255,255,255,0.6)"} />
             <span>{n.label}</span>
           </div>
         ))}
       </nav>
       <div className="sidebar__bottom">
-        <div className="sidebar__item"><Icon name="bell" size={18} color="rgba(255,255,255,0.6)" /><span>Notifications</span></div>
-        <div className="sidebar__item"><Icon name="help" size={18} color="rgba(255,255,255,0.6)" /><span>Help</span></div>
+        <div className="sidebar__item">
+          <Icon name="bell" size={18} color="rgba(255,255,255,0.6)" />
+          <span>Notifications</span>
+        </div>
+        <div className="sidebar__item">
+          <Icon name="help" size={18} color="rgba(255,255,255,0.6)" />
+          <span>Help</span>
+        </div>
       </div>
     </aside>
   );

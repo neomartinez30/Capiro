@@ -1,11 +1,11 @@
 import React from "react";
+import CapiroLogo from "./CapiroLogo";
 import "../styles/Footer.css";
-import logoWhite from "/logo-white.png";
 
 export default function Footer() {
   return (
     <footer className="footer">
-      <img src={logoWhite} alt="Capiro" className="footer__logo" />
+      <CapiroLogo color="rgba(255,255,255,0.4)" height={16} />
       <p className="footer__copy">
         &copy; {new Date().getFullYear()} Capiro. All rights reserved.
       </p>

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import GridBackground from "./components/GridBackground";
 import Particles from "./components/Particles";
 import Navbar from "./components/Navbar";
@@ -6,47 +8,65 @@ import Hero from "./components/Hero";
 import Features from "./components/Features";
 import Footer from "./components/Footer";
 import LoginModal from "./components/LoginModal";
-import DashboardPage from "./pages/DashboardPage";
+import OnboardingPage from "./pages/OnboardingPage";
+import DashboardLayout from "./pages/DashboardLayout";
 import "./styles/global.css";
 
-export default function App() {
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState("landing"); // "landing" | "dashboard"
+function LandingPage() {
+  const [loginOpen, setLoginOpen] = React.useState(false);
+  const [loginMode, setLoginMode] = React.useState("login");
+  const { user } = useAuth();
 
-  // ─── TODO: Replace with real Cognito auth state ───────────────
-  // import { useAuthenticator } from '@aws-amplify/ui-react';
-  // const { user, signOut } = useAuthenticator();
-  // const isAuthenticated = !!user;
+  if (user) return <Navigate to={user.orgId ? "/app" : "/onboarding"} replace />;
 
-  const handleLoginSuccess = () => {
-    setLoginOpen(false);
-    setCurrentPage("dashboard");
-  };
+  const openLogin = (mode = "login") => { setLoginMode(mode); setLoginOpen(true); };
 
-  const handleLogout = () => {
-    // TODO: await signOut();
-    setCurrentPage("landing");
-  };
-
-  // ── Dashboard ────────────────────────────────────────────────
-  if (currentPage === "dashboard") {
-    return <DashboardPage onLogout={handleLogout} />;
-  }
-
-  // ── Landing page ─────────────────────────────────────────────
   return (
     <div>
       <GridBackground />
       <Particles />
-      <Navbar onLoginClick={() => setLoginOpen(true)} />
-      <Hero onLoginClick={() => setLoginOpen(true)} />
+      <Navbar onLoginClick={() => openLogin("login")} onSignupClick={() => openLogin("signup")} />
+      <Hero onLoginClick={() => openLogin("login")} />
       <Features />
       <Footer />
       <LoginModal
         isOpen={loginOpen}
+        initialMode={loginMode}
         onClose={() => setLoginOpen(false)}
-        onSuccess={handleLoginSuccess}
       />
     </div>
+  );
+}
+
+function ProtectedRoute({ children }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/" replace />;
+  return children;
+}
+
+function OnboardingGuard({ children }) {
+  const { user, isNewUser } = useAuth();
+  if (!user) return <Navigate to="/" replace />;
+  // If user has no org, force onboarding (unless already there)
+  if (!user.orgId) return <Navigate to="/onboarding" replace />;
+  return children;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/onboarding" element={
+            <ProtectedRoute><OnboardingPage /></ProtectedRoute>
+          } />
+          <Route path="/app/*" element={
+            <OnboardingGuard><DashboardLayout /></OnboardingGuard>
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

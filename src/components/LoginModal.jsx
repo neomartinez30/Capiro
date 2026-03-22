@@ -1,50 +1,46 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import COGNITO_CONFIG from "../config/cognito";
 import BRAND from "../config/brand";
+import CapiroLogo from "./CapiroLogo";
 import "../styles/LoginModal.css";
-import logoBlack from "/logo-black.png";
 
-export default function LoginModal({ isOpen, onClose, onSuccess }) {
-  const [mode, setMode] = useState("login");
+export default function LoginModal({ isOpen, initialMode = "login", onClose }) {
+  const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { signIn, signUp } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => { setMode(initialMode); }, [initialMode]);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setError("");
     setLoading(true);
-
-    // ─── TODO: Replace with actual AWS Cognito authentication ───
-    // import { signIn, signUp } from 'aws-amplify/auth';
-    //
-    // if (mode === 'login') {
-    //   const { isSignedIn } = await signIn({ username: email, password });
-    //   if (isSignedIn) onSuccess?.();
-    // } else {
-    //   const { isSignUpComplete } = await signUp({
-    //     username: email, password,
-    //     options: { userAttributes: { name } },
-    //   });
-    // }
-
-    console.log(`[Cognito Placeholder] ${mode}:`, { email, password, name });
-    setTimeout(() => {
-      setLoading(false);
-      // Placeholder: simulate successful login → navigate to dashboard
+    try {
       if (mode === "login") {
-        onSuccess?.();
+        const user = await signIn({ email, password });
+        navigate(user.orgId ? "/app" : "/onboarding");
+        onClose();
       } else {
-        alert(
-          `[Placeholder] Account creation would connect to AWS Cognito.\n\n` +
-          `User Pool: ${COGNITO_CONFIG.userPoolId}\nRegion: ${COGNITO_CONFIG.region}`
-        );
+        await signUp({ email, password, name });
+        navigate("/onboarding");
+        onClose();
       }
-    }, 1500);
+    } catch (err) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgot = () => {
@@ -63,7 +59,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         <div className="modal-card__accent-bar" />
         <div className="modal-card__body">
           <div>
-            <img src={logoBlack} alt="Capiro" className="modal__logo" />
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+              <CapiroLogo color={BRAND.primary} height={26} />
+            </div>
             <h2 className="modal__heading">
               {mode === "login" ? "Welcome back" : "Create your account"}
             </h2>
@@ -73,6 +71,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                 : "Join Capiro to streamline submissions"}
             </p>
           </div>
+
+          {error && (
+            <div style={{ padding: "8px 12px", borderRadius: 6, background: "#FEF2F2", color: "#DC2626", fontSize: 13, marginBottom: 8 }}>
+              {error}
+            </div>
+          )}
 
           <div className="modal__form">
             {mode === "signup" && (
@@ -87,14 +91,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
             </div>
             <div>
               <label className="form-label">Password</label>
-              <input className="form-input" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <input className="form-input" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} />
             </div>
             {mode === "login" && (
               <div className="modal__forgot">
                 <button onClick={handleForgot}>Forgot password?</button>
               </div>
             )}
-            <button className="btn-submit" onClick={handleSubmit} disabled={loading}>
+            <button className="btn-submit" onClick={handleSubmit} disabled={loading || (!email || !password)}>
               {loading ? (
                 <span className="btn-submit__spinner"><span className="spinner" />Connecting...</span>
               ) : mode === "login" ? "Sign In" : "Create Account"}
@@ -104,7 +108,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
           <div className="modal__divider"><div className="modal__divider-line" />or<div className="modal__divider-line" /></div>
 
           <button className="btn-sso" onClick={handleSSO}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={BRAND.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BRAND.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
@@ -113,7 +117,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
 
           <p className="modal__toggle">
             {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-            <button onClick={() => setMode(mode === "login" ? "signup" : "login")}>
+            <button onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}>
               {mode === "login" ? "Sign up" : "Sign in"}
             </button>
           </p>
