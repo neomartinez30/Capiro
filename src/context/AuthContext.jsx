@@ -66,13 +66,11 @@ export function AuthProvider({ children }) {
   }
 
   const signIn = useCallback(async ({ email, password }) => {
-    setLoading(true);
     try {
       const result = await amplifySignIn({ username: email, password });
 
       if (result.nextStep?.signInStep === "CONFIRM_SIGN_UP") {
         setConfirmationPending(email);
-        setLoading(false);
         throw new Error("CONFIRM_SIGN_UP");
       }
 
@@ -92,16 +90,13 @@ export function AuthProvider({ children }) {
 
       setUser(appUser);
       setIsNewUser(false);
-      setLoading(false);
       return appUser;
     } catch (err) {
-      setLoading(false);
       throw err;
     }
   }, []);
 
   const signUp = useCallback(async ({ email, password, name }) => {
-    setLoading(true);
     try {
       const result = await amplifySignUp({
         username: email,
@@ -112,7 +107,6 @@ export function AuthProvider({ children }) {
       if (!result.isSignUpComplete) {
         // Need email confirmation
         setConfirmationPending(email);
-        setLoading(false);
         return { needsConfirmation: true, email };
       }
 
@@ -121,20 +115,16 @@ export function AuthProvider({ children }) {
       setIsNewUser(true);
       return appUser;
     } catch (err) {
-      setLoading(false);
       throw err;
     }
   }, [signIn]);
 
   const confirmSignUp = useCallback(async ({ email, code }) => {
-    setLoading(true);
     try {
       await amplifyConfirmSignUp({ username: email, confirmationCode: code });
       setConfirmationPending(null);
-      setLoading(false);
       return true;
     } catch (err) {
-      setLoading(false);
       throw err;
     }
   }, []);
