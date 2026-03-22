@@ -3,6 +3,12 @@ import COGNITO_CONFIG from "../config/cognito";
 
 const AuthContext = createContext(null);
 
+// Debug: mark module as loaded
+if (typeof window !== "undefined") {
+  window.__authModuleLoaded = true;
+  window.__devParam = new URLSearchParams(window.location.search).get("dev");
+}
+
 // Dev auto-login: add ?dev=onboarding or ?dev=dashboard to URL
 function getDevUser() {
   if (typeof window === "undefined") return null;
@@ -22,9 +28,19 @@ function getDevUser() {
 
 // Simulated Cognito auth — replace with aws-amplify/auth in production
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getDevUser());
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
+
+  // Dev auto-login via useEffect (runs after mount, more reliable in dev)
+  useEffect(() => {
+    if (user) return; // already logged in
+    const devUser = getDevUser();
+    if (devUser) {
+      console.log("[AuthContext] Dev auto-login:", devUser.orgId ? "dashboard" : "onboarding");
+      setUser(devUser);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signIn = useCallback(async ({ email, password }) => {
     setLoading(true);
