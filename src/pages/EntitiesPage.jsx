@@ -13,7 +13,7 @@ const INDUSTRY_COLORS = {
 const getAvatarColor = (industry) => INDUSTRY_COLORS[industry] || "#6B7280";
 
 const ClientDetailPanel = ({ client, onClose }) => {
-  c  st [activeTab, setActiveTab] = useState("topics");
+  const [activeTab, setActiveTab] = useState("topics");
   const clientTopics = topics.filter(t => t.clientId === client.id);
   const clientSubmissions = submissions.filter(s =>
     clientTopics.some(t => t.id === s.topicId)
