@@ -54,7 +54,21 @@ export function AuthProvider({ children }) {
           const org = JSON.parse(savedOrg);
           appUser.orgId = org.id;
           appUser.orgName = org.name;
-        } catch {}
+          // Validate the org still exists in DynamoDB
+          const { getFirmData } = await import("../services/api");
+          const firmResult = await getFirmData(org.id).catch(() => null);
+          if (!firmResult?.firm) {
+            // Firm no longer exists — clear stale org and force re-onboarding
+            localStorage.removeItem(`capiro_org_${appUser.email}`);
+            appUser.orgId = null;
+            appUser.orgName = null;
+          }
+        } catch {
+          // If validation fails, clear stale org data
+          localStorage.removeItem(`capiro_org_${appUser.email}`);
+          appUser.orgId = null;
+          appUser.orgName = null;
+        }
       }
       setUser(appUser);
     } catch {
@@ -78,14 +92,23 @@ export function AuthProvider({ children }) {
       const attributes = await fetchUserAttributes();
       const appUser = buildUser(cognitoUser, attributes);
 
-      // Restore org
+      // Restore org — validate it still exists
       const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
       if (savedOrg) {
         try {
           const org = JSON.parse(savedOrg);
-          appUser.orgId = org.id;
-          appUser.orgName = org.name;
-        } catch {}
+          const { getFirmData } = await import("../services/api");
+          const firmResult = await getFirmData(org.id).catch(() => null);
+          if (firmResult?.firm) {
+            appUser.orgId = org.id;
+            appUser.orgName = org.name;
+          } else {
+            // Stale — firm no longer in DB
+            localStorage.removeItem(`capiro_org_${appUser.email}`);
+          }
+        } catch {
+          localStorage.removeItem(`capiro_org_${appUser.email}`);
+        }
       }
 
       setUser(appUser);
