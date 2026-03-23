@@ -206,7 +206,7 @@ const ClientDetailPanel = ({ client, onClose }) => {
   );
 };
 
-const AddClientModal = ({ isOpen, onClose }) => {
+const AddClientModal = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: "",
     website: "",
@@ -214,16 +214,36 @@ const AddClientModal = ({ isOpen, onClose }) => {
     description: "",
     tags: "",
   });
+  const [saving, setSaving] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Mock submission
-    onClose();
+    if (!formData.name.trim()) return;
+    setSaving(true);
+    try {
+      await onSave({
+        id: "cli_" + Math.random().toString(36).slice(2, 10),
+        name: formData.name.trim(),
+        website: formData.website.trim(),
+        industry: formData.industry,
+        description: formData.description.trim(),
+        tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean),
+        status: "active",
+        source: "manual",
+        annualSpend: 0,
+      });
+      setFormData({ name: "", website: "", industry: "", description: "", tags: "" });
+      onClose();
+    } catch (err) {
+      console.error("Failed to save client:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -309,8 +329,8 @@ const AddClientModal = ({ isOpen, onClose }) => {
             <button type="button" onClick={onClose} className="btn btn--secondary">
               Cancel
             </button>
-            <button type="submit" className="btn btn--primary">
-              Add Client
+            <button type="submit" className="btn btn--primary" disabled={saving || !formData.name.trim()}>
+              {saving ? "Saving..." : "Add Client"}
             </button>
           </div>
         </form>
@@ -320,7 +340,7 @@ const AddClientModal = ({ isOpen, onClose }) => {
 };
 
 export default function EntitiesPage() {
-  const { clients, topics, submissions, allOffices: offices } = useFirmData();
+  const { clients, topics, submissions, allOffices: offices, saveItem, refreshData } = useFirmData();
   const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
   const [selectedClient, setSelectedClient] = useState(null);
   const [addClientOpen, setAddClientOpen] = useState(false);
@@ -511,7 +531,14 @@ export default function EntitiesPage() {
           onClose={() => setSelectedClient(null)}
         />
       )}
-      <AddClientModal isOpen={addClientOpen} onClose={() => setAddClientOpen(false)} />
+      <AddClientModal
+        isOpen={addClientOpen}
+        onClose={() => setAddClientOpen(false)}
+        onSave={async (clientData) => {
+          await saveItem("client", clientData);
+          await refreshData();
+        }}
+      />
     </div>
   );
 }
