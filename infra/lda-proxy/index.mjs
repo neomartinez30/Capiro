@@ -100,6 +100,10 @@ export const handler = async (event) => {
         return await handleSaveItem(body);
       case "deleteItem":
         return await handleDeleteItem(body);
+      case "getOffices":
+        return await handleGetOffices();
+      case "getFilingPeriods":
+        return await handleGetFilingPeriods();
       default:
         return fail(400, "Unknown action: " + action);
     }
@@ -462,6 +466,175 @@ async function handleDeleteItem(body) {
 
   return ok({ deleted: true });
 }
+
+// ════════════════════════════════════════════════════════════
+// ACTION: Get congressional offices (seed from Congress.gov if empty)
+// ════════════════════════════════════════════════════════════
+async function handleGetOffices() {
+  // Check if we already have offices in DynamoDB
+  const existing = await ddb.send(
+    new QueryCommand({
+      TableName: TABLE,
+      KeyConditionExpression: "PK = :pk",
+      ExpressionAttributeValues: { ":pk": "OFFICE" },
+      Limit: 1,
+    })
+  );
+
+  if (existing.Items && existing.Items.length > 0) {
+    // Return all offices
+    const all = await ddb.send(
+      new QueryCommand({
+        TableName: TABLE,
+        KeyConditionExpression: "PK = :pk",
+        ExpressionAttributeValues: { ":pk": "OFFICE" },
+      })
+    );
+    return ok({ offices: (all.Items || []).map(stripKeys) });
+  }
+
+  // Seed offices from Congress.gov API
+  let offices = [];
+  try {
+    const congressUrl =
+      "https://api.congress.gov/v3/member?limit=100&currentMember=true&format=json&api_key=DEMO_KEY";
+    const senateUrl = congressUrl + "&chamber=Senate";
+    const houseUrl = congressUrl + "&chamber=House";
+
+    const [senateData, houseData] = await Promise.all([
+      fetchJSON(senateUrl).catch(() => ({ members: [] })),
+      fetchJSON(houseUrl).catch(() => ({ members: [] })),
+    ]);
+
+    const allMembers = [
+      ...(senateData.members || []).map((m) => ({ ...m, _chamber: "Senate" })),
+      ...(houseData.members || []).map((m) => ({ ...m, _chamber: "House" })),
+    ];
+
+    for (const m of allMembers) {
+      const id = `off_${m.bioguideId || randomId()}`;
+      const party = (m.partyName || "").charAt(0) || "I";
+      const chamber = m._chamber;
+      const prefix = chamber === "Senate" ? "Sen." : "Rep.";
+      const name = `${prefix} ${m.name || "Unknown"}`;
+      const state = m.state || "";
+
+      const office = {
+        id,
+        name,
+        bioguideId: m.bioguideId || null,
+        chamber,
+        party,
+        state,
+        district: m.district || null,
+        committee: m.terms?.item?.[0]?.committee || "",
+        role: "Member",
+        submissionPortal: m.officialWebsiteUrl || m.url || null,
+        adoptedForms: chamber === "Senate",
+        phone: m.officePhone || null,
+        source: "congress_gov",
+      };
+      offices.push(office);
+    }
+  } catch (e) {
+    console.error("Congress.gov fetch error:", e);
+  }
+
+  // If Congress.gov returned nothing, seed with a core set of senators
+  if (offices.length === 0) {
+    offices = SEED_OFFICES;
+  }
+
+  // Write to DynamoDB
+  const now = new Date().toISOString();
+  for (const office of offices) {
+    await ddb.send(
+      new PutCommand({
+        TableName: TABLE,
+        Item: {
+          PK: "OFFICE",
+          SK: `OFFICE#${office.id}`,
+          ...office,
+          entityType: "office",
+          createdAt: now,
+        },
+      })
+    );
+  }
+
+  return ok({ offices, seeded: true });
+}
+
+// ════════════════════════════════════════════════════════════
+// ACTION: Get filing periods (computed dynamically)
+// ════════════════════════════════════════════════════════════
+async function handleGetFilingPeriods() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const periods = [];
+
+  // Generate LD-2 quarterly periods for current year and next
+  for (const y of [year, year + 1]) {
+    const quarters = [
+      { period: `Q1 ${y}`, due: `${y}-04-20` },
+      { period: `Q2 ${y}`, due: `${y}-07-20` },
+      { period: `Q3 ${y}`, due: `${y}-10-20` },
+      { period: `Q4 ${y}`, due: `${y + 1}-01-20` },
+    ];
+
+    for (const q of quarters) {
+      const dueDate = new Date(q.due);
+      const daysLeft = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+      periods.push({
+        id: `fp_${y}_${q.period.replace(/\s/g, "")}`,
+        type: "LD-2",
+        period: q.period,
+        dueDate: q.due,
+        status: daysLeft < 0 ? "past_due" : daysLeft < 30 ? "upcoming" : "future",
+        daysLeft: Math.max(0, daysLeft),
+      });
+    }
+
+    // LD-203 annual
+    periods.push({
+      id: `fp_${y}_LD203`,
+      type: "LD-203",
+      period: `${y} Year-End`,
+      dueDate: `${y + 1}-01-30`,
+      status:
+        new Date(`${y + 1}-01-30`) < now
+          ? "past_due"
+          : Math.ceil((new Date(`${y + 1}-01-30`) - now) / 86400000) < 30
+          ? "upcoming"
+          : "future",
+      daysLeft: Math.max(
+        0,
+        Math.ceil((new Date(`${y + 1}-01-30`) - now) / 86400000)
+      ),
+    });
+  }
+
+  return ok({ filingPeriods: periods.filter((p) => p.daysLeft < 400) });
+}
+
+// ── Seed offices (fallback if Congress.gov is unavailable) ──
+const SEED_OFFICES = [
+  { id: "off_s01", name: "Sen. Jack Reed (D-RI)", chamber: "Senate", party: "D", state: "RI", committee: "Armed Services", role: "Chair", submissionPortal: "https://reed.senate.gov/contact", adoptedForms: true, source: "seed" },
+  { id: "off_s02", name: "Sen. Roger Wicker (R-MS)", chamber: "Senate", party: "R", state: "MS", committee: "Armed Services", role: "Ranking Member", submissionPortal: "https://wicker.senate.gov/contact", adoptedForms: true, source: "seed" },
+  { id: "off_s03", name: "Sen. Patty Murray (D-WA)", chamber: "Senate", party: "D", state: "WA", committee: "Appropriations", role: "Chair", submissionPortal: "https://murray.senate.gov/contact", adoptedForms: true, source: "seed" },
+  { id: "off_s04", name: "Sen. Susan Collins (R-ME)", chamber: "Senate", party: "R", state: "ME", committee: "Appropriations", role: "Ranking Member", submissionPortal: "https://collins.senate.gov/contact", adoptedForms: true, source: "seed" },
+  { id: "off_s05", name: "Sen. Maria Cantwell (D-WA)", chamber: "Senate", party: "D", state: "WA", committee: "Commerce", role: "Chair", submissionPortal: "https://cantwell.senate.gov", adoptedForms: true, source: "seed" },
+  { id: "off_s06", name: "Sen. Chuck Grassley (R-IA)", chamber: "Senate", party: "R", state: "IA", committee: "Judiciary", role: "Member", submissionPortal: "https://grassley.senate.gov/contact", adoptedForms: true, source: "seed" },
+  { id: "off_s07", name: "Sen. Dick Durbin (D-IL)", chamber: "Senate", party: "D", state: "IL", committee: "Judiciary", role: "Chair", submissionPortal: "https://durbin.senate.gov/contact", adoptedForms: true, source: "seed" },
+  { id: "off_s08", name: "Sen. John Thune (R-SD)", chamber: "Senate", party: "R", state: "SD", committee: "Commerce", role: "Ranking Member", submissionPortal: "https://thune.senate.gov/contact", adoptedForms: true, source: "seed" },
+  { id: "off_s09", name: "Sen. Bernie Sanders (I-VT)", chamber: "Senate", party: "I", state: "VT", committee: "HELP", role: "Chair", submissionPortal: "https://sanders.senate.gov/contact", adoptedForms: true, source: "seed" },
+  { id: "off_s10", name: "Sen. Debbie Stabenow (D-MI)", chamber: "Senate", party: "D", state: "MI", committee: "Agriculture", role: "Chair", submissionPortal: "https://stabenow.senate.gov", adoptedForms: true, source: "seed" },
+  { id: "off_h01", name: "Rep. Mike Johnson (R-LA)", chamber: "House", party: "R", state: "LA", committee: "Speaker", role: "Speaker", submissionPortal: "https://mikejohnson.house.gov", adoptedForms: false, source: "seed" },
+  { id: "off_h02", name: "Rep. Hakeem Jeffries (D-NY)", chamber: "House", party: "D", state: "NY", committee: "Minority Leader", role: "Minority Leader", submissionPortal: "https://jeffries.house.gov", adoptedForms: false, source: "seed" },
+  { id: "off_h03", name: "Rep. Kay Granger (R-TX)", chamber: "House", party: "R", state: "TX", committee: "Appropriations", role: "Chair", submissionPortal: "https://granger.house.gov", adoptedForms: false, source: "seed" },
+  { id: "off_h04", name: "Rep. Rosa DeLauro (D-CT)", chamber: "House", party: "D", state: "CT", committee: "Appropriations", role: "Ranking Member", submissionPortal: "https://delauro.house.gov", adoptedForms: false, source: "seed" },
+  { id: "off_h05", name: "Rep. Frank Lucas (R-OK)", chamber: "House", party: "R", state: "OK", committee: "Science", role: "Chair", submissionPortal: "https://lucas.house.gov", adoptedForms: false, source: "seed" },
+];
 
 // ── Helpers ────────────────────────────────────────────────
 function stripKeys(item) {

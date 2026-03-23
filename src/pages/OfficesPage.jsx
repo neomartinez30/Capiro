@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { offices, topics, submissions } from "../data/ldaData.js";
+import { useFirmData } from "../hooks/useFirmData";
 import "../styles/Offices.css";
 
 export default function OfficesPage() {
+  const { allOffices: offices, topics, submissions } = useFirmData();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterChamber, setFilterChamber] = useState("all");
   const [filterParty, setFilterParty] = useState("all");
@@ -13,16 +14,16 @@ export default function OfficesPage() {
 
   // Extract unique committees for filter
   const committees = useMemo(() => {
-    const unique = [...new Set(offices.map((o) => o.committee))];
-    return ["All Committees", ...unique];
-  }, []);
+    const unique = [...new Set(offices.map((o) => o.committee).filter(Boolean))];
+    return ["All Committees", ...unique.sort()];
+  }, [offices]);
 
   // Filter offices based on all criteria
   const filteredOffices = useMemo(() => {
     return offices.filter((office) => {
       const matchSearch =
-        office.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        office.state.toLowerCase().includes(searchTerm.toLowerCase());
+        (office.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (office.state || "").toLowerCase().includes(searchTerm.toLowerCase());
       const matchChamber = filterChamber === "all" || office.chamber === filterChamber;
       const matchParty = filterParty === "all" || office.party === filterParty;
       const matchCommittee =
@@ -30,16 +31,17 @@ export default function OfficesPage() {
 
       return matchSearch && matchChamber && matchParty && matchCommittee;
     });
-  }, [searchTerm, filterChamber, filterParty, filterCommittee]);
+  }, [offices, searchTerm, filterChamber, filterParty, filterCommittee]);
 
   // Calculate stats
+  const total = offices.length || 1; // avoid division by zero
   const stats = {
     total: offices.length,
     senate: offices.filter((o) => o.chamber === "Senate").length,
     house: offices.filter((o) => o.chamber === "House").length,
     digital: offices.filter((o) => o.adoptedForms).length,
     digitalPercent: Math.round(
-      (offices.filter((o) => o.adoptedForms).length / offices.length) * 100
+      (offices.filter((o) => o.adoptedForms).length / total) * 100
     ),
   };
 
@@ -179,7 +181,7 @@ export default function OfficesPage() {
             <option value="">Choose a topic...</option>
             {topics.map((topic) => (
               <option key={topic.id} value={topic.id}>
-                {topic.name} ({topic.clientId})
+                {topic.name}{topic.clientId ? ` (${topic.clientId})` : ""}
               </option>
             ))}
           </select>

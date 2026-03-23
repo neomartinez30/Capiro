@@ -1,18 +1,13 @@
 import { useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useFirmDataContext } from "../context/FirmDataContext";
-import {
-  offices as mockOffices,
-  filingPeriods as mockFilingPeriods,
-  plans,
-} from "../data/ldaData";
+import { plans } from "../data/ldaData";
 
 /**
  * useFirmData — Tenant-scoped data hook
  *
  * Reads from FirmDataContext (backed by DynamoDB via our Lambda API).
- * Falls back to empty arrays if no data is loaded yet.
- * Returns the same shape as before so all existing pages work unchanged.
+ * All data comes from the API — no mock fallbacks.
  */
 export function useFirmData() {
   const { user } = useAuth();
@@ -25,8 +20,8 @@ export function useFirmData() {
     const topics = d?.topics || [];
     const submissions = d?.submissions || [];
     const lobbyists = d?.lobbyists || [];
-    const allOffices = d?.offices?.length > 0 ? d.offices : mockOffices;
-    const filingPeriods = d?.filingPeriods?.length > 0 ? d.filingPeriods : mockFilingPeriods;
+    const allOffices = d?.offices || [];
+    const filingPeriods = d?.filingPeriods || [];
 
     // Relevant offices (ones the firm interacts with)
     const relevantOfficeIds = new Set();

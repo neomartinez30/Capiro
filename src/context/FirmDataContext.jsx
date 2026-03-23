@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import * as api from "../services/api";
-import { offices as mockOffices, filingPeriods as mockFilingPeriods, plans } from "../data/ldaData";
+import { plans } from "../data/ldaData";
 
 const FirmDataContext = createContext(null);
 
@@ -22,17 +22,30 @@ export function FirmDataProvider({ children }) {
     setError(null);
 
     try {
-      const result = await api.getFirmData(firmId);
+      // Fetch firm data, offices, and filing periods in parallel
+      const [firmResult, officesResult, filingsResult] = await Promise.all([
+        api.getFirmData(firmId),
+        api.getOffices().catch(() => ({ offices: [] })),
+        api.getFilingPeriods().catch(() => ({ filingPeriods: [] })),
+      ]);
 
-      // Fall back to mock offices/filings if none stored yet
-      if (!result.offices || result.offices.length === 0) {
-        result.offices = mockOffices;
-      }
-      if (!result.filingPeriods || result.filingPeriods.length === 0) {
-        result.filingPeriods = mockFilingPeriods;
-      }
+      // Merge offices: firm-specific offices override, fall back to global
+      const offices =
+        firmResult.offices && firmResult.offices.length > 0
+          ? firmResult.offices
+          : officesResult.offices || [];
 
-      setData(result);
+      // Filing periods from API (dynamically computed)
+      const filingPeriods =
+        firmResult.filingPeriods && firmResult.filingPeriods.length > 0
+          ? firmResult.filingPeriods
+          : filingsResult.filingPeriods || [];
+
+      setData({
+        ...firmResult,
+        offices,
+        filingPeriods,
+      });
     } catch (err) {
       console.error("Failed to fetch firm data:", err);
       setError(err.message);
@@ -43,8 +56,8 @@ export function FirmDataProvider({ children }) {
         lobbyists: [],
         topics: [],
         submissions: [],
-        offices: mockOffices,
-        filingPeriods: mockFilingPeriods,
+        offices: [],
+        filingPeriods: [],
       });
     } finally {
       setLoading(false);

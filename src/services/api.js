@@ -1,17 +1,42 @@
 // ═══════════════════════════════════════════════════════════════
-// Capiro API Client
-// Communicates with the capiro-lda-proxy Lambda (expanded to full CRUD)
+// Capiro API Client — Production
+// All data flows through the capiro-lda-proxy Lambda → DynamoDB
 // ═══════════════════════════════════════════════════════════════
 
-const API_URL = "https://qzisgoeehkjqvg2vu2qfpm6jki0czheo.lambda-url.us-east-1.on.aws/";
+const API_URL =
+  "https://qzisgoeehkjqvg2vu2qfpm6jki0czheo.lambda-url.us-east-1.on.aws/";
+
+async function request(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    let msg = `API error ${res.status}`;
+    try {
+      const json = JSON.parse(text);
+      msg = json.error || msg;
+    } catch {
+      if (text) msg = text;
+    }
+    throw new Error(msg);
+  }
+
+  return res.json();
+}
 
 /**
- * Search the LDA registry for firms
+ * Search the LDA registry for firms (via Senate LDA API)
  */
 export async function searchFirms(query) {
-  const res = await fetch(`${API_URL}?action=search&search=${encodeURIComponent(query)}`);
-  if (!res.ok) throw new Error("Search failed");
-  return res.json();
+  return request(
+    `${API_URL}?action=search&search=${encodeURIComponent(query)}`
+  );
 }
 
 /**
@@ -19,13 +44,10 @@ export async function searchFirms(query) {
  * clients, lobbyists, and topics from the LDA Senate API.
  */
 export async function setupFirm({ firmId, ldaRegistrantId, firmData }) {
-  const res = await fetch(`${API_URL}?action=setupFirm`, {
+  return request(`${API_URL}?action=setupFirm`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ firmId, ldaRegistrantId, firmData }),
   });
-  if (!res.ok) throw new Error("Setup failed");
-  return res.json();
 }
 
 /**
@@ -33,36 +55,41 @@ export async function setupFirm({ firmId, ldaRegistrantId, firmData }) {
  * Returns: { firm, clients, lobbyists, topics, submissions, offices, filingPeriods }
  */
 export async function getFirmData(firmId) {
-  const res = await fetch(`${API_URL}?action=getFirmData&firmId=${encodeURIComponent(firmId)}`);
-  if (!res.ok) throw new Error("Fetch failed");
-  return res.json();
+  return request(
+    `${API_URL}?action=getFirmData&firmId=${encodeURIComponent(firmId)}`
+  );
+}
+
+/**
+ * Get congressional offices (from DynamoDB, seeded from Congress.gov)
+ */
+export async function getOffices() {
+  return request(`${API_URL}?action=getOffices`);
+}
+
+/**
+ * Get filing period schedule (dynamically computed)
+ */
+export async function getFilingPeriods() {
+  return request(`${API_URL}?action=getFilingPeriods`);
 }
 
 /**
  * Save or update an item in DynamoDB
- * @param {string} firmId
- * @param {string} type - "client" | "lobbyist" | "topic" | "submission" | "office" | "filing"
- * @param {object} data - the item data (must include `id` for updates)
  */
 export async function saveItem({ firmId, type, data }) {
-  const res = await fetch(`${API_URL}?action=saveItem`, {
+  return request(`${API_URL}?action=saveItem`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ firmId, type, data }),
   });
-  if (!res.ok) throw new Error("Save failed");
-  return res.json();
 }
 
 /**
  * Delete an item from DynamoDB
  */
 export async function deleteItem({ firmId, type, id }) {
-  const res = await fetch(`${API_URL}?action=deleteItem`, {
+  return request(`${API_URL}?action=deleteItem`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ firmId, type, id }),
   });
-  if (!res.ok) throw new Error("Delete failed");
-  return res.json();
 }
