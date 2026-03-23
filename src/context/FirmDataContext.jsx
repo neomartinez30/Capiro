@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import * as api from "../services/api";
 import { plans } from "../data/ldaData";
@@ -10,6 +10,7 @@ export function FirmDataProvider({ children }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const recoveryAttempted = useRef(false);
 
   const fetchFirmData = useCallback(async (firmId) => {
     if (!firmId) {
@@ -41,11 +42,43 @@ export function FirmDataProvider({ children }) {
           ? firmResult.filingPeriods
           : filingsResult.filingPeriods || [];
 
-      setData({
+      const merged = {
         ...firmResult,
         offices,
         filingPeriods,
-      });
+      };
+
+      // Auto-recovery: if the firm profile exists but has no clients,
+      // the setupFirm call likely failed during onboarding. Re-run it once.
+      if (
+        merged.firm &&
+        merged.firm.ldaRegistrantId &&
+        (!merged.clients || merged.clients.length === 0) &&
+        !recoveryAttempted.current
+      ) {
+        recoveryAttempted.current = true;
+        console.log("[Capiro] Auto-recovering: re-pulling LDA data for firm", firmId);
+        try {
+          const recovered = await api.setupFirm({
+            firmId,
+            ldaRegistrantId: merged.firm.ldaRegistrantId,
+            firmData: merged.firm,
+          });
+          // Re-fetch fresh data after recovery
+          const freshResult = await api.getFirmData(firmId);
+          setData({
+            ...freshResult,
+            offices,
+            filingPeriods,
+          });
+          return;
+        } catch (recoverErr) {
+          console.error("[Capiro] Auto-recovery failed:", recoverErr);
+          // Fall through to use whatever we have
+        }
+      }
+
+      setData(merged);
     } catch (err) {
       console.error("Failed to fetch firm data:", err);
       setError(err.message);
@@ -66,6 +99,7 @@ export function FirmDataProvider({ children }) {
 
   // Fetch when user orgId changes
   useEffect(() => {
+    recoveryAttempted.current = false;
     if (user?.orgId) {
       fetchFirmData(user.orgId);
     } else {
@@ -77,7 +111,6 @@ export function FirmDataProvider({ children }) {
   const saveItem = useCallback(async (type, itemData) => {
     if (!user?.orgId) return;
     const result = await api.saveItem({ firmId: user.orgId, type, data: itemData });
-    // Refresh all data after save
     await fetchFirmData(user.orgId);
     return result;
   }, [user?.orgId, fetchFirmData]);
