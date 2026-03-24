@@ -122,7 +122,8 @@ async function handleSearch(params) {
   const url = `${LDA_BASE}/registrants/?search=${encodeURIComponent(search)}&format=json`;
   const data = await fetchJSON(url);
 
-  const results = (data.results || []).slice(0, 20).map((r) => ({
+  const searchLower = search.toLowerCase();
+  const mapped = (data.results || []).map((r) => ({
     id: String(r.id),
     name: r.name || "",
     address: [r.address_1, r.address_2, r.city, r.state, r.zip]
@@ -135,6 +136,20 @@ async function handleSearch(params) {
     registrationDate: r.dt_updated || "",
   }));
 
+  // Sort by relevance: exact start match first, then contains, then rest
+  mapped.sort((a, b) => {
+    const aName = a.name.toLowerCase();
+    const bName = b.name.toLowerCase();
+    const aStarts = aName.startsWith(searchLower) ? 0 : 1;
+    const bStarts = bName.startsWith(searchLower) ? 0 : 1;
+    if (aStarts !== bStarts) return aStarts - bStarts;
+    const aContains = aName.includes(searchLower) ? 0 : 1;
+    const bContains = bName.includes(searchLower) ? 0 : 1;
+    if (aContains !== bContains) return aContains - bContains;
+    return aName.localeCompare(bName);
+  });
+
+  const results = mapped.slice(0, 20);
   return ok({ count: data.count || results.length, results });
 }
 
