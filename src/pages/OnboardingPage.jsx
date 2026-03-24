@@ -14,7 +14,9 @@ const searchLDAFirms = async (query) => {
   if (!query || query.length < 2) return [];
 
   try {
+    console.log("[Capiro] Searching LDA for:", query);
     const data = await api.searchFirms(query);
+    console.log("[Capiro] Search response:", data);
     if (data.results && data.results.length > 0) {
       return data.results.map(r => ({
         ...r,
@@ -22,11 +24,12 @@ const searchLDAFirms = async (query) => {
         activeClients: null,
       }));
     }
-  } catch {
-    // Proxy not available — return empty
+    // API returned 0 results
+    return [];
+  } catch (err) {
+    console.error("[Capiro] Search failed:", err.message);
+    throw err; // Let caller handle it
   }
-
-  return [];
 };
 
 const OnboardingPage = () => {
@@ -84,8 +87,13 @@ const OnboardingPage = () => {
       try {
         const results = await searchLDAFirms(val);
         setSearchResults(results);
-      } catch {
+        if (results.length === 0) {
+          setScanError(null); // No error, just no results
+        }
+      } catch (err) {
+        console.error("[Capiro] Search error:", err);
         setSearchResults([]);
+        setScanError("Search failed: " + err.message);
       } finally {
         setIsSearching(false);
       }
