@@ -31,10 +31,9 @@ const TABLE = process.env.DYNAMODB_TABLE || "capiro-data";
 const LDA_BASE = "https://lda.senate.gov/api/v1";
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
+// CORS is handled by the Lambda Function URL config — do NOT duplicate
+// Access-Control-* headers here or the browser sees "*, *" and rejects it.
 const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Content-Type": "application/json",
 };
 
