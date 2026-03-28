@@ -12,14 +12,15 @@ const INDUSTRY_COLORS = {
 
 const getAvatarColor = (industry) => INDUSTRY_COLORS[industry] || "#6B7280";
 
-const ClientDetailPanel = ({ client, onClose }) => {
+const ClientDetailPanel = ({ client, topics, submissions, offices, onClose }) => {
   const [activeTab, setActiveTab] = useState("topics");
-  const clientTopics = topics.filter(t => t.clientId === client.id);
-  const clientSubmissions = submissions.filter(s =>
+  const clientTopics = (topics || []).filter(t => t.clientId === client.id);
+  const clientSubmissions = (submissions || []).filter(s =>
     clientTopics.some(t => t.id === s.topicId)
   );
 
   const getOfficeNames = (officeIds) => {
+    if (!officeIds || !offices) return "";
     return officeIds
       .map(id => offices.find(o => o.id === id)?.name)
       .filter(Boolean)
@@ -528,6 +529,9 @@ export default function EntitiesPage() {
       {selectedClient && (
         <ClientDetailPanel
           client={selectedClient}
+          topics={topics}
+          submissions={submissions}
+          offices={offices}
           onClose={() => setSelectedClient(null)}
         />
       )}

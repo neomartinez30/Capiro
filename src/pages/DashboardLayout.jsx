@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { Topbar, LiveFeedPanel } from "../components/dashboard";
 import DashboardHome from "./DashboardHome";
 import EntitiesPage from "./EntitiesPage";
-import LobbyistsPage from "./LobbyistsPage";
 import FirmProfilePage from "./FirmProfilePage";
 import SubmissionsPage from "./SubmissionsPage";
 import SubmissionWizard from "./SubmissionWizard";
@@ -17,8 +16,7 @@ const NAV_ITEMS = [
   { id: "dashboard",   path: "",             label: "Dashboard",      icon: "grid" },
   { id: "firm",        path: "firm",         label: "Firm",           icon: "building" },
   { id: "entities",    path: "entities",     label: "Clients",        icon: "building" },
-  { id: "lobbyists",   path: "lobbyists",    label: "Lobbyists",      icon: "users" },
-  { id: "submissions", path: "submissions",  label: "Submissions",    icon: "file" },
+  { id: "submissions", path: "submissions",  label: "LobbyFlow",      icon: "file" },
   { id: "offices",     path: "offices",      label: "Offices",        icon: "flag" },
   { id: "settings",    path: "settings",     label: "Settings",       icon: "settings" },
 ];
@@ -107,7 +105,6 @@ export default function DashboardLayout() {
               <Route index element={<DashboardHome />} />
               <Route path="firm" element={<FirmProfilePage />} />
               <Route path="entities" element={<EntitiesPage />} />
-              <Route path="lobbyists" element={<LobbyistsPage />} />
               <Route path="submissions" element={<SubmissionsPage />} />
               <Route path="submissions/new" element={<SubmissionWizard />} />
               <Route path="offices" element={<OfficesPage />} />

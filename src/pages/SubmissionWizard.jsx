@@ -209,28 +209,50 @@ function UploadDocumentsStage({ uploadedFiles, onUpdateFiles, onNext, onBack }) 
 // ═══════════════════════════════════════════════════════════════
 // Stage 3: SELECT TOPIC
 // ═══════════════════════════════════════════════════════════════
-function SelectTopicStage({ topics, selectedClient, selectedTopic, onSelectTopic, onNext, onBack }) {
+function SelectTopicStage({ topics, selectedClient, selectedTopic, onSelectTopic, saveItem, onNext, onBack }) {
   const [customTopic, setCustomTopic] = useState("");
+  const [customDescription, setCustomDescription] = useState("");
   const [showCustom, setShowCustom] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Filter topics relevant to selected client
+  // Filter topics relevant to selected client — show all if none match
   const clientTopics = useMemo(() => {
     if (!selectedClient) return topics;
-    return topics.filter(
+    const matched = topics.filter(
       (t) => !t.clientId || t.clientId === selectedClient.id || t.clientId === selectedClient.clientId
     );
+    return matched.length > 0 ? matched : topics;
   }, [topics, selectedClient]);
 
-  const handleCreateCustom = () => {
+  const handleCreateCustom = async () => {
     if (!customTopic.trim()) return;
+    setSaving(true);
     const newTopic = {
-      id: `topic_custom_${Date.now()}`,
+      id: `topic_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       name: customTopic.trim(),
+      description: customDescription.trim(),
+      clientId: selectedClient?.id || null,
       issueCode: "CUSTOM",
+      generalIssueCode: "CUSTOM",
+      status: "drafting",
+      targetOffices: [],
       isCustom: true,
     };
+
+    // Persist to DynamoDB if saveItem is available
+    if (saveItem) {
+      try {
+        await saveItem("topic", newTopic);
+      } catch (err) {
+        console.error("Failed to save topic:", err);
+      }
+    }
+
     onSelectTopic(newTopic);
     setShowCustom(false);
+    setCustomTopic("");
+    setCustomDescription("");
+    setSaving(false);
   };
 
   return (
@@ -240,7 +262,7 @@ function SelectTopicStage({ topics, selectedClient, selectedTopic, onSelectTopic
         <p>Choose the policy topic or issue area for this CDS submission.</p>
       </div>
 
-      {clientTopics.length > 0 && (
+      {clientTopics.length > 0 ? (
         <div className="sw-topic-list">
           {clientTopics.map((topic) => (
             <button
@@ -263,6 +285,10 @@ function SelectTopicStage({ topics, selectedClient, selectedTopic, onSelectTopic
             </button>
           ))}
         </div>
+      ) : (
+        <div className="sw-empty">
+          <p>No topics found for this client. Create one below to get started.</p>
+        </div>
       )}
 
       {!showCustom ? (
@@ -271,20 +297,37 @@ function SelectTopicStage({ topics, selectedClient, selectedTopic, onSelectTopic
           style={{ marginTop: 16 }}
           onClick={() => setShowCustom(true)}
         >
-          + Create custom topic
+          + Create new topic
         </button>
       ) : (
         <div className="sw-custom-topic">
-          <input
-            className="sw-field__input"
-            placeholder="Enter topic name (e.g., Healthcare Infrastructure)"
-            value={customTopic}
-            onChange={(e) => setCustomTopic(e.target.value)}
-            autoFocus
-          />
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <button className="sw-btn sw-btn--primary sw-btn--sm" onClick={handleCreateCustom}>
-              Create Topic
+          <div className="sw-field" style={{ marginBottom: 12 }}>
+            <label className="sw-field__label">Topic Name</label>
+            <input
+              className="sw-field__input"
+              placeholder="e.g., Healthcare Infrastructure, Defense R&D"
+              value={customTopic}
+              onChange={(e) => setCustomTopic(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="sw-field" style={{ marginBottom: 12 }}>
+            <label className="sw-field__label">Description (optional)</label>
+            <textarea
+              className="sw-field__textarea"
+              placeholder="Brief description of the policy issue..."
+              value={customDescription}
+              onChange={(e) => setCustomDescription(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              className="sw-btn sw-btn--primary sw-btn--sm"
+              onClick={handleCreateCustom}
+              disabled={!customTopic.trim() || saving}
+            >
+              {saving ? "Saving..." : "Create & Select Topic"}
             </button>
             <button className="sw-btn sw-btn--ghost sw-btn--sm" onClick={() => setShowCustom(false)}>
               Cancel
@@ -1134,7 +1177,7 @@ function AddLanguageStage({ selectedSenators, formData, onUpdateFormData, whiteP
 // ═══════════════════════════════════════════════════════════════
 // Stage 8: REVIEW & SUBMIT
 // ═══════════════════════════════════════════════════════════════
-function ReviewStage({ selectedClient, selectedTopic, selectedSenators, formData, whitePaper, uploadedFiles, onBack }) {
+function ReviewStage({ selectedClient, selectedTopic, selectedSenators, formData, whitePaper, uploadedFiles, saveItem, refreshData, onBack }) {
   const navigate = useNavigate();
   const [checklist, setChecklist] = useState({
     accuracy: false,
@@ -1144,6 +1187,8 @@ function ReviewStage({ selectedClient, selectedTopic, selectedSenators, formData
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submissionId, setSubmissionId] = useState(null);
+  const [saveError, setSaveError] = useState(null);
 
   const allChecked = Object.values(checklist).every(Boolean);
 
@@ -1154,13 +1199,67 @@ function ReviewStage({ selectedClient, selectedTopic, selectedSenators, formData
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 2000));
-    setSubmitted(true);
-    setSubmitting(false);
+    setSaveError(null);
+
+    const refId = "SUB-" + Date.now().toString(36).toUpperCase();
+    setSubmissionId(refId);
+
+    // Save a submission record for each senator office
+    const submissionPromises = selectedSenatorObjects.map((senator) => {
+      const senatorFormData = formData[senator.id] || {};
+      const fieldValues = {};
+      Object.entries(senatorFormData).forEach(([fieldId, data]) => {
+        fieldValues[fieldId] = data.value || "";
+      });
+
+      const record = {
+        id: `sub_${Date.now()}_${senator.id}_${Math.random().toString(36).slice(2, 6)}`,
+        referenceId: refId,
+        clientId: selectedClient?.id || null,
+        clientName: selectedClient?.name || "",
+        topicId: selectedTopic?.id || null,
+        topicName: selectedTopic?.name || selectedTopic?.description || "",
+        senatorId: senator.id,
+        senatorName: senator.name,
+        senatorState: senator.state,
+        officeId: senator.id,
+        title: `${selectedTopic?.name || "CDS"} — ${senator.name}`,
+        type: "appropriations",
+        status: "submitted",
+        formData: fieldValues,
+        whitePaper: whitePaper || "",
+        documentCount: uploadedFiles?.length || 0,
+        submissionMethod: senator.submissionMethod || "web_form",
+        deadline: senator.deadline,
+        wordCount: whitePaper ? whitePaper.split(/\s+/).filter(Boolean).length : 0,
+        version: 1,
+        aiGenerated: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (saveItem) {
+        return saveItem("submission", record).catch((err) => {
+          console.error(`Failed to save submission for ${senator.name}:`, err);
+          return null;
+        });
+      }
+      return Promise.resolve(record);
+    });
+
+    try {
+      await Promise.all(submissionPromises);
+      if (refreshData) await refreshData();
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Submission save failed:", err);
+      setSaveError("Some submissions failed to save. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
-    const submissionId = "SUB-" + Date.now().toString(36).toUpperCase();
     return (
       <div className="sw-stage">
         <div className="sw-success">
@@ -1190,7 +1289,7 @@ function ReviewStage({ selectedClient, selectedTopic, selectedSenators, formData
         </div>
 
         <div className="sw-post-actions">
-          <button className="sw-btn sw-btn--primary" onClick={() => navigate("/app/submissions")}>View All Submissions</button>
+          <button className="sw-btn sw-btn--primary" onClick={() => navigate("/app/submissions")}>View in LobbyFlow</button>
           <button className="sw-btn sw-btn--ghost" onClick={() => navigate("/app")}>Back to Dashboard</button>
         </div>
       </div>
@@ -1294,6 +1393,7 @@ function ReviewStage({ selectedClient, selectedTopic, selectedSenators, formData
           )}
         </button>
         {!allChecked && <p className="sw-stage__hint">Complete all certifications to enable submission.</p>}
+        {saveError && <p className="sw-stage__hint" style={{ color: "#DC2626" }}>{saveError}</p>}
       </div>
     </div>
   );
@@ -1372,7 +1472,7 @@ function generateAutoFill(field, client, topic) {
 // ═══════════════════════════════════════════════════════════════
 export default function SubmissionWizard() {
   const navigate = useNavigate();
-  const { clients, topics, allOffices } = useFirmData();
+  const { clients, topics, allOffices, saveItem, refreshData } = useFirmData();
   const [stage, setStage] = useState(1);
   const [selectedClient, setSelectedClient] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -1439,6 +1539,7 @@ export default function SubmissionWizard() {
             selectedClient={selectedClient}
             selectedTopic={selectedTopic}
             onSelectTopic={setSelectedTopic}
+            saveItem={saveItem}
             onNext={() => goTo(4)}
             onBack={() => goTo(2)}
           />
@@ -1494,6 +1595,8 @@ export default function SubmissionWizard() {
             formData={formData}
             whitePaper={whitePaper}
             uploadedFiles={uploadedFiles}
+            saveItem={saveItem}
+            refreshData={refreshData}
             onBack={() => goTo(7)}
           />
         )}

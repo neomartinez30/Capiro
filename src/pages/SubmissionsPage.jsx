@@ -265,7 +265,7 @@ export default function SubmissionsPage() {
       {/* Header */}
       <div className="submissions-header">
         <div className="submissions-header__left">
-          <h1 className="submissions-header__title">Submissions</h1>
+          <h1 className="submissions-header__title">LobbyFlow</h1>
           <span className="submissions-header__badge">{filteredSubmissions.length}</span>
         </div>
         <button className="btn btn--primary" onClick={() => navigate("/app/submissions/new")}>
