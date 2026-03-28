@@ -93,3 +93,47 @@ export async function deleteItem({ firmId, type, id }) {
     body: JSON.stringify({ firmId, type, id }),
   });
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Bedrock Agent API — CDS Form Submission
+// Uses a separate backend (FastAPI + Bedrock) for agentic workflows
+// ═══════════════════════════════════════════════════════════════
+
+const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8000";
+
+/**
+ * Start a new agent session for CDS form filling
+ */
+export async function startAgentSession({ client, topic, senators, documents, whitePaper }) {
+  return request(`${AGENT_API_URL}/api/agent/start`, {
+    method: "POST",
+    body: JSON.stringify({ client, topic, senators, documents, whitePaper }),
+  });
+}
+
+/**
+ * Send a message to an active agent session
+ */
+export async function sendAgentMessage({ session_id, message }) {
+  return request(`${AGENT_API_URL}/api/agent/message`, {
+    method: "POST",
+    body: JSON.stringify({ session_id, message }),
+  });
+}
+
+/**
+ * Get current form data from an agent session
+ */
+export async function getAgentFormData(sessionId) {
+  return request(`${AGENT_API_URL}/api/agent/${encodeURIComponent(sessionId)}/form`);
+}
+
+/**
+ * Generate a white paper draft using the Bedrock agent
+ */
+export async function generateWhitePaper({ client, topic, documents }) {
+  return request(`${AGENT_API_URL}/api/agent/whitepaper`, {
+    method: "POST",
+    body: JSON.stringify({ client, topic, documents }),
+  });
+}
