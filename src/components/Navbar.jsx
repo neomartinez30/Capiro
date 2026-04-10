@@ -17,7 +17,7 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
 
   return (
     <nav className={`navbar ${scrolled ? "navbar--scrolled" : ""}`}>
-      <CapiroLogo color="#01226A" height={24} />
+      <CapiroLogo color="#fff" height={24} />
       <div className="navbar__links">
         <button className="navbar__link" onClick={() => scrollTo("how-it-works")}>How It Works</button>
         <button className="navbar__link" onClick={() => scrollTo("ai-transparency")}>AI &amp; Transparency</button>

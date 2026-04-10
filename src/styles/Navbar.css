@@ -5,12 +5,13 @@
   padding: 0 var(--sp-8);
   height: 64px;
   display: flex; align-items: center; justify-content: space-between;
+  background: var(--capiro-blue);
   transition: background var(--duration-med) ease, backdrop-filter var(--duration-med) ease, box-shadow var(--duration-med) ease;
 }
 .navbar--scrolled {
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--capiro-blue);
   backdrop-filter: blur(24px);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 /* Nav links */
@@ -19,7 +20,7 @@
 }
 .navbar__link {
   background: none; border: none;
-  color: #475569;
+  color: rgba(255,255,255,0.6);
   font-size: 13px; font-weight: 500;
   font-family: var(--font-system);
   cursor: pointer;
@@ -27,7 +28,7 @@
   padding: 0;
 }
 .navbar__link:hover {
-  color: #0F172A;
+  color: #fff;
 }
 
 /* Actions */
@@ -40,17 +41,17 @@
   padding: 8px 18px;
   border-radius: var(--radius-md);
   background: transparent;
-  border: 1px solid rgba(0,0,0,0.12);
-  color: #475569;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.8);
   font-size: 13px; font-weight: 500;
   font-family: var(--font-system);
   cursor: pointer;
   transition: all var(--duration-fast);
 }
 .navbar .btn-ghost:hover {
-  border-color: rgba(0,0,0,0.25);
-  background: rgba(0,0,0,0.03);
-  color: #0F172A;
+  border-color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
 }
 
 /* Accent button — Waitlist */
