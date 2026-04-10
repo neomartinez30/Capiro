@@ -353,16 +353,127 @@ function SelectTopicStage({ topics, selectedClient, selectedTopic, onSelectTopic
 // ═══════════════════════════════════════════════════════════════
 // Stage 4: WHITE PAPER (Collaborative AI-assisted)
 // ═══════════════════════════════════════════════════════════════
+
+// Simulated online team members
+const TEAM_MEMBERS = [
+  { id: 1, name: "You", initials: "YO", color: "#3A6FF7", online: true },
+  { id: 2, name: "Sarah Chen", initials: "SC", color: "#059669", online: true },
+  { id: 3, name: "Marcus Wright", initials: "MW", color: "#D97706", online: true },
+  { id: 4, name: "Elena Vasquez", initials: "EV", color: "#9333EA", online: false },
+  { id: 5, name: "James Park", initials: "JP", color: "#DC2626", online: false },
+];
+
 function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePaper, onUpdateWhitePaper, onNext, onBack }) {
   const [generating, setGenerating] = useState(false);
   const [agentMessages, setAgentMessages] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [showCommentInput, setShowCommentInput] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [selectedText, setSelectedText] = useState("");
+  const [selectionRange, setSelectionRange] = useState(null);
+  const [activeCommentId, setActiveCommentId] = useState(null);
+  const [replyText, setReplyText] = useState("");
   const chatEndRef = useRef(null);
+  const editorRef = useRef(null);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(scrollToBottom, [agentMessages]);
+
+  // Track text selection in the editor for commenting
+  const handleTextSelect = () => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    if (start !== end) {
+      setSelectedText(textarea.value.substring(start, end));
+      setSelectionRange({ start, end });
+    }
+  };
+
+  const addComment = () => {
+    if (!newComment.trim()) return;
+    const comment = {
+      id: `cmt_${Date.now()}`,
+      author: TEAM_MEMBERS[0],
+      text: newComment.trim(),
+      selectedText: selectedText || null,
+      range: selectionRange,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      resolved: false,
+      replies: [],
+    };
+    setComments((prev) => [...prev, comment]);
+    setNewComment("");
+    setShowCommentInput(false);
+    setSelectedText("");
+    setSelectionRange(null);
+  };
+
+  const addReply = (commentId) => {
+    if (!replyText.trim()) return;
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              replies: [
+                ...c.replies,
+                {
+                  id: `reply_${Date.now()}`,
+                  author: TEAM_MEMBERS[0],
+                  text: replyText.trim(),
+                  timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                },
+              ],
+            }
+          : c
+      )
+    );
+    setReplyText("");
+  };
+
+  const resolveComment = (commentId) => {
+    setComments((prev) => prev.map((c) => (c.id === commentId ? { ...c, resolved: true } : c)));
+  };
+
+  // Toolbar formatting actions
+  const execFormat = (prefix, suffix) => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = whitePaper || "";
+    const before = text.substring(0, start);
+    const selected = text.substring(start, end) || "text";
+    const after = text.substring(end);
+    const newText = before + prefix + selected + (suffix || "") + after;
+    onUpdateWhitePaper(newText);
+    // Refocus
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
+    }, 0);
+  };
+
+  const execLine = (prefix) => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const text = whitePaper || "";
+    // Find start of current line
+    const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+    const lineEnd = text.indexOf("\n", start);
+    const end = lineEnd === -1 ? text.length : lineEnd;
+    const line = text.substring(lineStart, end);
+    // Remove existing heading/list prefix
+    const cleaned = line.replace(/^#{1,6}\s|^[-*]\s|^>\s|^\d+\.\s/, "");
+    const newText = text.substring(0, lineStart) + prefix + cleaned + text.substring(end);
+    onUpdateWhitePaper(newText);
+  };
 
   const generateDraft = async () => {
     setGenerating(true);
@@ -371,8 +482,6 @@ function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePa
       { role: "assistant", content: "Analyzing your documents and generating a white paper draft..." },
     ]);
 
-    // In production, this calls the Bedrock agent to analyze docs and generate
-    // For now, generate a structured draft
     await new Promise((r) => setTimeout(r, 2000));
 
     const clientName = selectedClient?.name || "the client";
@@ -396,7 +505,6 @@ function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePa
     setAgentMessages((prev) => [...prev, { role: "user", content: message }]);
     setGenerating(true);
 
-    // In production, send to Bedrock agent for refinement
     await new Promise((r) => setTimeout(r, 1500));
 
     setAgentMessages((prev) => [
@@ -409,69 +517,249 @@ function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePa
     setGenerating(false);
   };
 
+  const onlineMembers = TEAM_MEMBERS.filter((m) => m.online);
+  const offlineMembers = TEAM_MEMBERS.filter((m) => !m.online);
+  const unresolvedComments = comments.filter((c) => !c.resolved);
+
   return (
     <div className="sw-stage">
-      <div className="sw-stage__header">
-        <h2>Create White Paper</h2>
-        <p>
-          Collaborate with AI to build a compelling white paper for your CDS submission.
-          This document's "language" will be inserted into the final form.
-        </p>
+      <div className="sw-stage__header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div>
+          <h2>Create White Paper</h2>
+          <p>
+            Collaborate with AI to build a compelling white paper for your CDS submission.
+            This document's "language" will be inserted into the final form.
+          </p>
+        </div>
+        {/* Online Team Members */}
+        <div className="sw-team-presence">
+          <div className="sw-team-avatars">
+            {onlineMembers.map((m) => (
+              <div key={m.id} className="sw-team-avatar sw-team-avatar--online" title={`${m.name} (online)`} style={{ background: m.color }}>
+                {m.initials}
+                <span className="sw-team-avatar__status" />
+              </div>
+            ))}
+            {offlineMembers.map((m) => (
+              <div key={m.id} className="sw-team-avatar sw-team-avatar--offline" title={`${m.name} (offline)`} style={{ background: m.color }}>
+                {m.initials}
+              </div>
+            ))}
+          </div>
+          <span className="sw-team-count">{onlineMembers.length} online</span>
+        </div>
       </div>
 
       <div className="sw-paper-layout">
         {/* Editor pane */}
         <div className="sw-paper-editor">
-          <div className="sw-paper-editor__toolbar">
-            <span className="sw-paper-editor__title">White Paper Draft</span>
-            {!whitePaper && (
-              <button
-                className="sw-btn sw-btn--primary sw-btn--sm"
-                onClick={generateDraft}
-                disabled={generating}
-              >
-                {generating ? (
-                  <span className="sw-btn__loading"><span className="sw-spinner sw-spinner--sm" /> Generating...</span>
-                ) : (
-                  "Generate Draft with AI"
-                )}
+          {/* MS Word-style toolbar */}
+          <div className="sw-paper-editor__toolbar sw-word-toolbar">
+            <div className="sw-word-toolbar__group">
+              <button className="sw-word-toolbar__btn" title="Bold" onClick={() => execFormat("**", "**")}>
+                <strong>B</strong>
               </button>
-            )}
+              <button className="sw-word-toolbar__btn" title="Italic" onClick={() => execFormat("*", "*")}>
+                <em>I</em>
+              </button>
+              <button className="sw-word-toolbar__btn" title="Underline" onClick={() => execFormat("<u>", "</u>")}>
+                <span style={{ textDecoration: "underline" }}>U</span>
+              </button>
+              <button className="sw-word-toolbar__btn" title="Strikethrough" onClick={() => execFormat("~~", "~~")}>
+                <span style={{ textDecoration: "line-through" }}>S</span>
+              </button>
+            </div>
+            <div className="sw-word-toolbar__sep" />
+            <div className="sw-word-toolbar__group">
+              <button className="sw-word-toolbar__btn" title="Heading 1" onClick={() => execLine("# ")}>
+                H1
+              </button>
+              <button className="sw-word-toolbar__btn" title="Heading 2" onClick={() => execLine("## ")}>
+                H2
+              </button>
+              <button className="sw-word-toolbar__btn" title="Heading 3" onClick={() => execLine("### ")}>
+                H3
+              </button>
+            </div>
+            <div className="sw-word-toolbar__sep" />
+            <div className="sw-word-toolbar__group">
+              <button className="sw-word-toolbar__btn" title="Bullet List" onClick={() => execLine("- ")}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor"/><circle cx="3" cy="12" r="1.5" fill="currentColor"/><circle cx="3" cy="18" r="1.5" fill="currentColor"/></svg>
+              </button>
+              <button className="sw-word-toolbar__btn" title="Numbered List" onClick={() => execLine("1. ")}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" fontSize="8" fill="currentColor" stroke="none" fontWeight="700">1</text><text x="2" y="14" fontSize="8" fill="currentColor" stroke="none" fontWeight="700">2</text><text x="2" y="20" fontSize="8" fill="currentColor" stroke="none" fontWeight="700">3</text></svg>
+              </button>
+              <button className="sw-word-toolbar__btn" title="Block Quote" onClick={() => execLine("> ")}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="3" x2="3" y2="21"/><line x1="9" y1="8" x2="21" y2="8"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="16" x2="17" y2="16"/></svg>
+              </button>
+            </div>
+            <div className="sw-word-toolbar__sep" />
+            <div className="sw-word-toolbar__group">
+              <button
+                className={`sw-word-toolbar__btn sw-word-toolbar__btn--comment${showCommentInput ? " sw-word-toolbar__btn--active" : ""}`}
+                title={selectedText ? "Comment on selection" : "Add Comment"}
+                onClick={() => setShowCommentInput(!showCommentInput)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+            <div style={{ flex: 1 }} />
+            <div className="sw-word-toolbar__group">
+              <span className="sw-paper-editor__title">White Paper Draft</span>
+              {!whitePaper && (
+                <button
+                  className="sw-btn sw-btn--primary sw-btn--sm"
+                  onClick={generateDraft}
+                  disabled={generating}
+                  style={{ marginLeft: 8 }}
+                >
+                  {generating ? (
+                    <span className="sw-btn__loading"><span className="sw-spinner sw-spinner--sm" /> Generating...</span>
+                  ) : (
+                    "Generate Draft with AI"
+                  )}
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Comment input bar (shown when comment toolbar button is active) */}
+          {showCommentInput && (
+            <div className="sw-comment-input-bar">
+              {selectedText && (
+                <div className="sw-comment-input-bar__selection">
+                  Commenting on: <em>"{selectedText.length > 60 ? selectedText.substring(0, 60) + "..." : selectedText}"</em>
+                </div>
+              )}
+              <div className="sw-comment-input-bar__row">
+                <input
+                  className="sw-field__input"
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") addComment(); }}
+                  autoFocus
+                />
+                <button className="sw-btn sw-btn--primary sw-btn--sm" onClick={addComment} disabled={!newComment.trim()}>
+                  Comment
+                </button>
+                <button className="sw-btn sw-btn--ghost sw-btn--sm" onClick={() => { setShowCommentInput(false); setNewComment(""); }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           <textarea
+            ref={editorRef}
             className="sw-paper-editor__textarea"
             value={whitePaper || ""}
             onChange={(e) => onUpdateWhitePaper(e.target.value)}
+            onMouseUp={handleTextSelect}
+            onKeyUp={handleTextSelect}
             placeholder="Click 'Generate Draft with AI' to create an initial draft, or start writing here..."
             rows={20}
           />
           {whitePaper && (
             <div className="sw-paper-editor__stats">
-              {whitePaper.split(/\s+/).filter(Boolean).length} words · {whitePaper.length} characters
+              {whitePaper.split(/\s+/).filter(Boolean).length} words · {whitePaper.length} characters · {unresolvedComments.length} comment{unresolvedComments.length !== 1 ? "s" : ""}
             </div>
           )}
         </div>
 
-        {/* Chat pane */}
-        <div className="sw-paper-chat">
-          <div className="sw-paper-chat__header">AI Assistant</div>
-          <div className="sw-paper-chat__messages">
-            <div className="sw-chat-msg sw-chat-msg--assistant">
-              <p>I can help you write and refine this white paper. Generate a draft to get started, then ask me to improve specific sections.</p>
+        {/* Right side: Comments panel + Chat */}
+        <div className="sw-paper-right">
+          {/* Comments Panel */}
+          {comments.length > 0 && (
+            <div className="sw-comments-panel">
+              <div className="sw-comments-panel__header">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Comments ({unresolvedComments.length})
+              </div>
+              <div className="sw-comments-panel__list">
+                {comments.filter((c) => !c.resolved).map((comment) => (
+                  <div
+                    key={comment.id}
+                    className={`sw-comment-thread${activeCommentId === comment.id ? " sw-comment-thread--active" : ""}`}
+                    onClick={() => setActiveCommentId(activeCommentId === comment.id ? null : comment.id)}
+                  >
+                    <div className="sw-comment-thread__head">
+                      <div className="sw-comment-author" style={{ background: comment.author.color }}>
+                        {comment.author.initials}
+                      </div>
+                      <div className="sw-comment-thread__meta">
+                        <strong>{comment.author.name}</strong>
+                        <span>{comment.timestamp}</span>
+                      </div>
+                      <button
+                        className="sw-comment-resolve-btn"
+                        title="Resolve"
+                        onClick={(e) => { e.stopPropagation(); resolveComment(comment.id); }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </button>
+                    </div>
+                    {comment.selectedText && (
+                      <div className="sw-comment-thread__quote">"{comment.selectedText.length > 80 ? comment.selectedText.substring(0, 80) + "..." : comment.selectedText}"</div>
+                    )}
+                    <div className="sw-comment-thread__body">{comment.text}</div>
+
+                    {/* Replies */}
+                    {comment.replies.map((reply) => (
+                      <div key={reply.id} className="sw-comment-reply">
+                        <div className="sw-comment-reply__head">
+                          <div className="sw-comment-author sw-comment-author--sm" style={{ background: reply.author.color }}>
+                            {reply.author.initials}
+                          </div>
+                          <strong>{reply.author.name}</strong>
+                          <span>{reply.timestamp}</span>
+                        </div>
+                        <div className="sw-comment-reply__body">{reply.text}</div>
+                      </div>
+                    ))}
+
+                    {/* Reply input (shown when thread is active) */}
+                    {activeCommentId === comment.id && (
+                      <div className="sw-comment-reply-input" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          className="sw-field__input"
+                          placeholder="Reply..."
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") addReply(comment.id); }}
+                        />
+                        <button className="sw-btn sw-btn--primary sw-btn--sm" onClick={() => addReply(comment.id)} disabled={!replyText.trim()}>
+                          Reply
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-            {agentMessages.map((msg, i) => (
-              <div key={i} className={`sw-chat-msg sw-chat-msg--${msg.role}`}>
-                <p>{msg.content}</p>
-              </div>
-            ))}
-            {generating && (
+          )}
+
+          {/* Chat pane */}
+          <div className="sw-paper-chat">
+            <div className="sw-paper-chat__header">AI Assistant</div>
+            <div className="sw-paper-chat__messages">
               <div className="sw-chat-msg sw-chat-msg--assistant">
-                <span className="sw-spinner sw-spinner--sm" />
+                <p>I can help you write and refine this white paper. Generate a draft to get started, then ask me to improve specific sections.</p>
               </div>
-            )}
-            <div ref={chatEndRef} />
+              {agentMessages.map((msg, i) => (
+                <div key={i} className={`sw-chat-msg sw-chat-msg--${msg.role}`}>
+                  <p>{msg.content}</p>
+                </div>
+              ))}
+              {generating && (
+                <div className="sw-chat-msg sw-chat-msg--assistant">
+                  <span className="sw-spinner sw-spinner--sm" />
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            <ChatInput onSend={handleChatMessage} disabled={generating} placeholder="Ask AI to refine the paper..." />
           </div>
-          <ChatInput onSend={handleChatMessage} disabled={generating} placeholder="Ask AI to refine the paper..." />
         </div>
       </div>
 

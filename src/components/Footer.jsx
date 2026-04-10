@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="footer__inner">
         <div className="footer__top">
           <div className="footer__brand">
-            <CapiroLogo color="rgba(255,255,255,0.6)" height={18} />
+            <CapiroLogo color="#475569" height={18} />
             <p className="footer__tagline">
               The congressional submission platform for government affairs professionals.
             </p>

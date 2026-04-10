@@ -89,7 +89,6 @@ function HowItWorks() {
 function AITransparency() {
   const principles = [
     { icon: "\uD83D\uDD0D", title: "Full Transparency", desc: "Every AI-generated field is visible to you before submission. No black boxes, no hidden logic." },
-    { icon: "\u270B", title: "Human-in-the-Loop, Always", desc: "No submission leaves the platform without explicit practitioner approval. The human review gate is a hard product constraint." },
     { icon: "\uD83D\uDCCB", title: "AI Trained on Legislative Conventions", desc: "Capiro\u2019s drafting AI is purpose-trained on NDAA and Appropriations submission language — not generic content." },
     { icon: "\uD83D\uDD12", title: "Data Stays Yours", desc: "Client profiles, white papers, and submission history are yours. Capiro does not use your client data to train shared models." },
     { icon: "\uD83D\uDCCA", title: "Auditable Submission Record", desc: "Every submission is logged with a timestamp, delivery method, and confirmed status. Full, searchable record." },
@@ -101,7 +100,7 @@ function AITransparency() {
       <div className="ls-container">
         <p className="ls-label ls-label--gold">AI Governance &amp; Transparency</p>
         <h2 className="ls-title">AI does the mechanical work. You make every decision that matters.</h2>
-        <p className="ls-body" style={{ color: "rgba(255,255,255,0.55)" }}>
+        <p className="ls-body" style={{ color: "#475569" }}>
           Roughly 80% of the submission workflow is mechanical and can be automated.
           The remaining 20% — the strategic judgment, the language refinement, the final approval — belongs to the practitioner. Always.
         </p>
@@ -318,7 +317,7 @@ function Pricing({ onLoginClick }) {
               <li>Submission history and auto-fill</li>
               <li>Year-round intelligence and tracking</li>
             </ul>
-            <button className="ls-btn-plan ls-btn-filled" onClick={onLoginClick}>Request a Demo</button>
+            <a className="ls-btn-plan ls-btn-filled" href="mailto:info@capiro.ai?subject=Demo%20Request&body=Hi%20Capiro%20team%2C%0A%0AI%E2%80%99d%20like%20to%20request%20a%20demo.%0A%0AName%3A%20%0ACompany%3A%20%0ARole%3A%20%0A%0AThanks!" style={{ textDecoration: 'none' }}>Request a Demo</a>
           </div>
           <div className="ls-pricing-card">
             <p className="ls-plan-name">Congressional Office</p>
@@ -346,7 +345,10 @@ function FinalCTA() {
 
   const handleWaitlist = (e) => {
     e.preventDefault();
-    if (email.trim()) setSubmitted(true);
+    if (email.trim()) {
+      window.location.href = `mailto:info@capiro.ai?subject=${encodeURIComponent('Waitlist Request')}&body=${encodeURIComponent(`Hi Capiro team,\n\nI'd like to join the waitlist for early access.\n\nEmail: ${email}\n\nThanks!`)}`;
+      setSubmitted(true);
+    }
   };
 
   return (

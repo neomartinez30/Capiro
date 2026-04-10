@@ -8,8 +8,9 @@ export default function Hero({ onLoginClick }) {
   const handleWaitlist = (e) => {
     e.preventDefault();
     if (email.trim()) {
+      // Open mailto with the user's email pre-filled
+      window.location.href = `mailto:info@capiro.ai?subject=${encodeURIComponent('Waitlist Request')}&body=${encodeURIComponent(`Hi Capiro team,\n\nI'd like to join the waitlist for early access.\n\nEmail: ${email}\n\nThanks!`)}`;
       setSubmitted(true);
-      // TODO: Connect to actual waitlist API
     }
   };
 
@@ -22,7 +23,7 @@ export default function Hero({ onLoginClick }) {
         </div>
 
         <h1 className="hero__headline">
-          The infrastructure layer for{" "}
+          AI Workflows for{" "}
           <span className="hero__headline-accent">congressional submissions</span>
         </h1>
 
@@ -58,6 +59,16 @@ export default function Hero({ onLoginClick }) {
           <p className="waitlist-note">
             Early access opens Q2 2026 &middot; No credit card required
           </p>
+        </div>
+
+        {/* Request Demo CTA */}
+        <div className="hero__demo">
+          <a
+            href="mailto:info@capiro.ai?subject=Demo%20Request&body=Hi%20Capiro%20team%2C%0A%0AI%E2%80%99d%20like%20to%20request%20a%20demo.%0A%0AName%3A%20%0ACompany%3A%20%0ARole%3A%20%0A%0AThanks!"
+            className="hero__demo-btn"
+          >
+            Request a Demo
+          </a>
         </div>
 
         <div className="hero__stats">

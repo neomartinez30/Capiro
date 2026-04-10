@@ -23,16 +23,16 @@
   --bg-surface:     #FFFFFF;
   --bg-soft:        #F8FAFC;
 
-  /* ── Landing page surfaces ─────────────────────────── */
-  --lp-bg:          #0a1628;
-  --lp-card:        rgba(255,255,255,0.028);
-  --lp-card-hover:  rgba(255,255,255,0.055);
-  --lp-border:      rgba(255,255,255,0.065);
-  --lp-border-hover:rgba(140,170,230,0.18);
-  --lp-text:        rgba(255,255,255,0.88);
-  --lp-text-2:      rgba(255,255,255,0.55);
-  --lp-text-3:      rgba(255,255,255,0.35);
-  --lp-section-alt: rgba(255,255,255,0.018);
+  /* ── Landing page surfaces (clean white theme) ────── */
+  --lp-bg:          #FFFFFF;
+  --lp-card:        #FFFFFF;
+  --lp-card-hover:  #F8FAFC;
+  --lp-border:      rgba(0,0,0,0.08);
+  --lp-border-hover:rgba(58,111,247,0.25);
+  --lp-text:        #0F172A;
+  --lp-text-2:      #475569;
+  --lp-text-3:      #94A3B8;
+  --lp-section-alt: #F8FAFC;
 
   /* ── Text ──────────────────────────────────────────── */
   --text:           #0F172A;

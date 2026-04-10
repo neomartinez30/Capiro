@@ -143,42 +143,80 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* AI TRANSPARENCY */}
-      <section id="ai-transparency" className="ai-section">
+      {/* PLATFORM IN ACTION */}
+      <section id="ai-transparency" className="platform-section">
         <div className="lp-container">
-          <p className="section-label">AI Governance & Transparency</p>
-          <div className="two-col">
-            <div>
-              <h2 className="section-title">AI does the mechanical work. You make every decision that matters.</h2>
-              <p style={{ fontSize: 17, color: "rgba(255,255,255,.65)", lineHeight: 1.7, maxWidth: 520 }}>
-                Capiro's position on AI is clear and unchanging: roughly 80% of the submission workflow is mechanical and can be automated. The remaining 20% — the strategic judgment, the language refinement, the final approval — belongs to the practitioner. Always.
-              </p>
+          <p className="section-label" style={{ textAlign: 'center' }}>Platform in Action</p>
+          <h2 className="section-title" style={{ textAlign: 'center', maxWidth: 680, margin: '0 auto 16px' }}>See what Capiro does — not just what it promises.</h2>
+          <p className="section-body" style={{ textAlign: 'center', margin: '0 auto 72px' }}>
+            Two core capabilities that replace hundreds of hours of manual work every submission cycle.
+          </p>
+
+          {/* Feature 1: AI White Paper Drafting */}
+          <div className="feature-row">
+            <div className="feature-row__text">
+              <span className="feature-badge">Core Capability</span>
+              <h3>AI White Paper Drafting</h3>
+              <p>Co-write compelling white papers with an AI assistant trained on legislative conventions. Capiro pulls from client profiles, real-time intelligence, and prior NDAA language to generate structured drafts you can edit with full formatting tools and team collaboration.</p>
+              <ul className="feature-list">
+                <li>AI-generated structured drafts from your documents</li>
+                <li>Real-time team collaboration and inline comments</li>
+                <li>Full formatting toolbar with word and character tracking</li>
+              </ul>
             </div>
-            <div className="ai-80-20">
-              <div className="ai-bar-wrap">
-                <div className="ai-bar-label"><span>Capiro handles (80%)</span><span>You own (20%)</span></div>
-                <div className="ai-bar"><div className="ai-bar-fill" /></div>
-                <div style={{ marginTop: 16, fontSize: 13, color: "rgba(255,255,255,.4)" }}>Copying · Pasting · Formatting · Routing · Localizing · Tracking</div>
-                <div style={{ marginTop: 6, fontSize: 13, color: "rgba(255,255,255,.4)" }}>Strategy · Judgment · Relationships · Final approval</div>
+            <div className="feature-row__media">
+              <div className="feature-screenshot">
+                <img src="/screenshots/white-paper.png" alt="AI White Paper Drafting" />
               </div>
             </div>
           </div>
 
-          <div className="ai-principle-grid">
-            {[
-              { icon: "🔍", title: "Full Transparency", desc: "Every AI-generated field is visible to you before submission. No black boxes, no hidden logic." },
-              { icon: "✋", title: "Human-in-the-Loop, Always", desc: "No submission leaves the platform without explicit practitioner approval. The human review gate is a hard product constraint." },
-              { icon: "📋", title: "AI Trained on Legislative Conventions", desc: "Capiro's drafting AI is purpose-trained on NDAA and Appropriations submission language — not generic content." },
-              { icon: "🔒", title: "Data Stays Yours", desc: "Client profiles, white papers, and submission history are yours. Capiro does not use your client data to train shared models." },
-              { icon: "📊", title: "Auditable Submission Record", desc: "Every submission is logged with a timestamp, delivery method, and confirmed status." },
-              { icon: "⚖️", title: "Expertise Is Not Automated", desc: "Capiro does not automate which members to approach or what language will resonate. Those things require expertise." },
-            ].map((p, i) => (
-              <div key={i} className="ai-principle">
-                <div className="ai-icon">{p.icon}</div>
-                <h3>{p.title}</h3>
-                <p>{p.desc}</p>
+          {/* Feature 2: Multi-Office Submission Routing */}
+          <div className="feature-row feature-row--reverse">
+            <div className="feature-row__text">
+              <span className="feature-badge">Core Capability</span>
+              <h3>Multi-Office Submission Routing</h3>
+              <p>Select from a live directory of all congressional offices with real-time deadlines and unique form requirements. Capiro's AI agent then pre-populates every field across every selected office and submits simultaneously.</p>
+              <ul className="feature-list">
+                <li>Live deadline tracking for every senate office</li>
+                <li>Filter by state, party, committee, and deadline status</li>
+                <li>AI agent fills and submits to all offices at once</li>
+              </ul>
+            </div>
+            <div className="feature-row__media">
+              <div className="feature-screenshot feature-screenshot--stacked">
+                <img src="/screenshots/multi-office.png" alt="Multi-Office Selection" className="feature-img-main" />
+                <img src="/screenshots/multi-office-agent.png" alt="AI Form Agent" className="feature-img-overlay" />
               </div>
-            ))}
+            </div>
+          </div>
+
+          {/* AI Governance — compact row */}
+          <div className="ai-governance-bar">
+            <div className="ai-governance-bar__top">
+              <div>
+                <h3>AI does 80% of the work. You own every decision.</h3>
+                <p>The mechanical work is automated. Strategy, judgment, and final approval stay with the practitioner.</p>
+              </div>
+              <div className="ai-bar-compact">
+                <div className="ai-bar-label"><span>Capiro (80%)</span><span>You (20%)</span></div>
+                <div className="ai-bar"><div className="ai-bar-fill" /></div>
+              </div>
+            </div>
+            <div className="ai-principle-row">
+              {[
+                { icon: "🔍", title: "Full Transparency", desc: "Every AI field visible before submission" },
+                { icon: "📋", title: "Legislative AI", desc: "Trained on NDAA & Appropriations language" },
+                { icon: "🔒", title: "Data Stays Yours", desc: "Client data never trains shared models" },
+                { icon: "📊", title: "Auditable Record", desc: "Every submission logged with full trail" },
+                { icon: "⚖️", title: "Expertise Preserved", desc: "Strategy stays with the practitioner" },
+              ].map((p, i) => (
+                <div key={i} className="ai-principle-chip">
+                  <span>{p.icon}</span>
+                  <div><strong>{p.title}</strong><p>{p.desc}</p></div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -369,8 +407,8 @@ export default function LandingPage() {
             A lobbyist selects fifteen congressional offices, sees pre-populated submissions tailored to each, and submits simultaneously. The alternative is fifteen browser windows and thirty to sixty hours. That is what Capiro recovers.
           </p>
           <div className="hero-actions">
-            <a href="#" className="btn-primary-lp" onClick={e => { e.preventDefault(); openLogin("signup"); }}>Start for Free</a>
-            <a href="#" className="btn-ghost" onClick={e => { e.preventDefault(); openLogin("login"); }}>Request a Demo</a>
+            <a href="#" className="btn-cta-primary" onClick={e => { e.preventDefault(); openLogin("signup"); }}>Start for Free</a>
+            <a href="mailto:info@capiro.ai?subject=Demo%20Request&body=Hi%20Capiro%20team%2C%0A%0AI%E2%80%99d%20like%20to%20request%20a%20demo.%0A%0AName%3A%20%0ACompany%3A%20%0ARole%3A%20%0A%0AThanks!" className="btn-cta-outline">Request a Demo</a>
           </div>
         </div>
       </section>
@@ -417,8 +455,8 @@ const landingCSS = `
   .nav-links a:hover { color: var(--blue-lp); }
   .btn-nav { background: var(--blue-lp) !important; color: #fff !important; padding: 9px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; transition: background .2s !important; cursor: pointer; }
   .btn-nav:hover { background: var(--blue-mid) !important; }
-  .hero { background: linear-gradient(160deg, #0d1f35 0%, #1a3a5c 55%, #2556a0 100%); padding: 100px 32px 96px; text-align: center; position: relative; overflow: hidden; }
-  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(59,125,216,.18) 0%, transparent 70%); }
+  .hero { background: linear-gradient(160deg, #0f1d2f 0%, #162d4a 55%, #1e3f6e 100%); padding: 100px 32px 96px; text-align: center; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(59,125,216,.12) 0%, transparent 70%); }
   .lp-container { max-width: var(--max-lp); margin: 0 auto; position: relative; }
   .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(200,151,58,.15); border: 1px solid rgba(200,151,58,.4); color: var(--gold-light); border-radius: 100px; padding: 6px 16px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 28px; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold-light); animation: pulse 2s infinite; }
@@ -467,20 +505,48 @@ const landingCSS = `
   .step-tag.ai { background: #e8f0fb; color: var(--blue-mid); }
   .step-tag.human { background: #fef3e0; color: #8a5c00; }
   .step-tag.auto { background: #edf7ed; color: #2d7a2d; }
-  .ai-section { background: #0d1f35; color: #fff; }
-  .ai-section .section-title { color: #fff; }
-  .ai-section .section-label { color: var(--gold-light); }
-  .ai-principle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-top: 52px; }
-  .ai-principle { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-lp); padding: 28px; transition: background .2s; }
-  .ai-principle:hover { background: rgba(255,255,255,.1); }
-  .ai-icon { width: 44px; height: 44px; border-radius: 10px; background: rgba(200,151,58,.15); border: 1px solid rgba(200,151,58,.3); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 18px; }
-  .ai-principle h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
-  .ai-principle p { font-size: 14px; color: rgba(255,255,255,.6); line-height: 1.6; }
-  .ai-80-20 { padding: 40px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-lp); }
-  .ai-bar-wrap { min-width: 220px; }
-  .ai-bar-label { display: flex; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 10px; }
-  .ai-bar { height: 12px; border-radius: 100px; background: rgba(255,255,255,.08); overflow: hidden; }
+
+  /* ── Platform in Action Section ── */
+  .platform-section { background: #fff; border-top: 1px solid var(--border-lp); }
+  .platform-section .section-label { color: var(--blue-light-lp); }
+  .platform-section .section-title { color: var(--ink); }
+  .platform-section .section-body { color: var(--ink-muted); }
+
+  /* Feature Rows */
+  .feature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; margin-bottom: 80px; }
+  .feature-row--reverse { direction: rtl; }
+  .feature-row--reverse > * { direction: ltr; }
+  .feature-row__text { }
+  .feature-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--blue-light-lp); background: #eef3fc; padding: 5px 12px; border-radius: 4px; margin-bottom: 16px; }
+  .feature-row__text h3 { font-family: 'Playfair Display', serif, Georgia, serif; font-size: clamp(24px, 3vw, 32px); font-weight: 700; color: var(--ink); line-height: 1.2; margin-bottom: 16px; }
+  .feature-row__text > p { font-size: 15px; color: var(--ink-muted); line-height: 1.7; margin-bottom: 20px; }
+  .feature-list { list-style: none; padding: 0; }
+  .feature-list li { font-size: 14px; color: var(--ink-soft); padding: 6px 0; display: flex; align-items: flex-start; gap: 10px; }
+  .feature-list li::before { content: '✓'; font-weight: 700; color: var(--blue-light-lp); flex-shrink: 0; }
+
+  /* Feature Screenshots */
+  .feature-row__media { position: relative; }
+  .feature-screenshot { border-radius: 12px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,.1), 0 1px 3px rgba(0,0,0,.06); border: 1px solid var(--border-lp); background: #f8fafb; }
+  .feature-screenshot img { display: block; width: 100%; height: auto; }
+  .feature-screenshot--stacked { position: relative; }
+  .feature-screenshot--stacked .feature-img-main { display: block; width: 100%; height: auto; }
+  .feature-screenshot--stacked .feature-img-overlay { position: absolute; bottom: -16px; right: -16px; width: 42%; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.08); border: 2px solid #fff; }
+
+  /* AI Governance Bar */
+  .ai-governance-bar { background: #f8fafb; border: 1px solid var(--border-lp); border-radius: var(--radius-lp); padding: 36px 40px; margin-top: 16px; }
+  .ai-governance-bar__top { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; margin-bottom: 32px; }
+  .ai-governance-bar__top h3 { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .ai-governance-bar__top > div > p { font-size: 14px; color: var(--ink-muted); line-height: 1.6; }
+  .ai-bar-compact { min-width: 200px; }
+  .ai-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-muted); margin-bottom: 8px; }
+  .ai-bar { height: 10px; border-radius: 100px; background: #e8ecf1; overflow: hidden; }
   .ai-bar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--blue-light-lp) 0%, var(--gold) 80%); width: 80%; }
+  .ai-principle-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .ai-principle-chip { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 180px; padding: 12px 14px; background: #fff; border: 1px solid var(--border-lp); border-radius: 8px; }
+  .ai-principle-chip span:first-child { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .ai-principle-chip strong { font-size: 13px; color: var(--ink); display: block; margin-bottom: 2px; }
+  .ai-principle-chip p { font-size: 12px; color: var(--ink-muted); line-height: 1.45; margin: 0; }
+
   .comp-section { background: var(--cream-lp); }
   .comp-table-wrap { overflow-x: auto; margin-top: 48px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -536,10 +602,10 @@ const landingCSS = `
   .btn-plan.outline:hover { background: var(--blue-lp); color: #fff; }
   .btn-plan.filled { background: var(--gold); color: var(--ink); box-shadow: 0 4px 16px rgba(200,151,58,.35); }
   .btn-plan.filled:hover { background: #d9a03f; }
-  .final-cta { background: linear-gradient(135deg, #0d1f35 0%, #1a3a5c 100%); text-align: center; }
-  .final-cta .section-label { color: var(--gold-light); }
-  .final-cta .section-title { color: #fff; margin: 0 auto 20px; max-width: 700px; }
-  .final-cta .section-body { color: rgba(255,255,255,.6); margin: 0 auto 44px; }
+  .final-cta { background: var(--cream-lp); text-align: center; border-top: 1px solid var(--border-lp); }
+  .final-cta .section-label { color: var(--blue-light-lp); }
+  .final-cta .section-title { color: var(--ink); margin: 0 auto 20px; max-width: 700px; }
+  .final-cta .section-body { color: var(--ink-muted); margin: 0 auto 44px; }
   .lp-footer { background: var(--ink); color: rgba(255,255,255,.4); padding: 40px 32px; font-size: 13px; }
   .lp-footer a { color: rgba(255,255,255,.5); text-decoration: none; }
   .lp-footer a:hover { color: rgba(255,255,255,.8); }
@@ -551,9 +617,21 @@ const landingCSS = `
   .footer-links ul { list-style: none; padding: 0; }
   .footer-links ul li { margin-bottom: 8px; }
   .footer-divider { border: none; border-top: 1px solid rgba(255,255,255,.08); margin-bottom: 20px; }
+
+  /* CTA buttons for light background */
+  .btn-cta-primary { background: var(--blue-lp); color: #fff; padding: 15px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; text-decoration: none; transition: transform .15s, box-shadow .15s; box-shadow: 0 4px 20px rgba(26,58,92,.25); cursor: pointer; display: inline-block; }
+  .btn-cta-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(26,58,92,.35); background: var(--blue-mid); }
+  .btn-cta-outline { background: transparent; color: var(--blue-lp); padding: 15px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; text-decoration: none; border: 1.5px solid var(--blue-lp); transition: background .2s, color .2s; display: inline-block; }
+  .btn-cta-outline:hover { background: var(--blue-lp); color: #fff; }
+
   @media (max-width: 768px) {
     .two-col { grid-template-columns: 1fr; gap: 40px; }
     .hero-stat { padding: 16px 24px; border-right: none; border-bottom: 1px solid rgba(255,255,255,.1); }
     .nav-links { display: none; }
+    .feature-row, .feature-row--reverse { grid-template-columns: 1fr; gap: 40px; direction: ltr; }
+    .feature-row--reverse > * { direction: ltr; }
+    .ai-governance-bar__top { grid-template-columns: 1fr; gap: 24px; }
+    .ai-principle-row { flex-direction: column; }
+    .feature-screenshot--stacked .feature-img-overlay { position: relative; bottom: auto; right: auto; width: 60%; margin-top: 12px; }
   }
 `;
