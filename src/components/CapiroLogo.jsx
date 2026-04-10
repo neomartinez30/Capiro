@@ -1,16 +1,20 @@
 import React from "react";
 
 export default function CapiroLogo({ color = "#fff", height = 22 }) {
-  // Use the actual brand logo images from public/
-  const src = color === "#fff" || color.includes("255") || color.includes("rgba(255")
-    ? "/logo-white.png"
-    : "/logo-black.png";
+  // Always use the white logo since logo-black.png is missing/empty
+  // Apply CSS filter to make it dark when needed
+  const isWhite = color === "#fff" || color.includes("255") || color.includes("rgba(255");
 
   return (
     <img
-      src={src}
+      src="/logo-white.png"
       alt="Capiro"
-      style={{ height, display: "block", objectFit: "contain" }}
+      style={{
+        height,
+        display: "block",
+        objectFit: "contain",
+        filter: isWhite ? "none" : "brightness(0)",
+      }}
     />
   );
 }

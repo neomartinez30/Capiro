@@ -24,12 +24,12 @@ export default function Hero({ onLoginClick }) {
 
         <h1 className="hero__headline">
           AI Workflows for{" "}
-          <span className="hero__headline-accent">congressional submissions</span>
+          <span className="hero__headline-accent">Congressional Submissions</span>
         </h1>
 
         <p className="hero__subline">
           Capiro standardizes and automates how legislative information is submitted,
-          processed, and understood — so practitioners spend time on strategy, not copy-paste.
+          processed, and understood - so practitioners spend time on strategy, not copy-paste.
         </p>
 
         {/* Waitlist CTA */}
@@ -86,7 +86,7 @@ export default function Hero({ onLoginClick }) {
           </div>
           <div className="hero__stat">
             <strong>0</strong>
-            <span>platforms built for this — until now</span>
+            <span>platforms built for this - until now</span>
           </div>
         </div>
       </div>

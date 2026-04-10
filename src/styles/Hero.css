@@ -170,15 +170,16 @@
 
 /* ── Stat bar ── */
 .hero__stats {
-  display: flex; gap: 0; justify-content: center; flex-wrap: wrap;
+  display: flex; gap: 0; justify-content: center; flex-wrap: nowrap;
   margin-top: 72px;
   border-top: 1px solid rgba(0,0,0,0.06);
   padding-top: 44px;
   animation: fadeSlideUp 0.9s ease 0.7s both;
 }
 .hero__stat {
-  padding: 0 40px; text-align: center;
+  padding: 0 28px; text-align: center;
   border-right: 1px solid rgba(0,0,0,0.06);
+  flex-shrink: 0;
 }
 .hero__stat:last-child { border-right: none; }
 .hero__stat strong {

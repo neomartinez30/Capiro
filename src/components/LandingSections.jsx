@@ -1,12 +1,29 @@
 import React from "react";
 import "../styles/LandingSections.css";
 
+/* ── SVG Icons (replace emojis) ── */
+const iconProps = { width: 24, height: 24, fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" };
+
+const Icons = {
+  Search: () => <svg {...iconProps} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Clipboard: () => <svg {...iconProps} viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>,
+  Lock: () => <svg {...iconProps} viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+  BarChart: () => <svg {...iconProps} viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>,
+  Scale: () => <svg {...iconProps} viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M2 12l4-4 4 4"/><path d="M14 12l4-4 4 4"/><path d="M2 12h8"/><path d="M14 12h8"/></svg>,
+  Refresh: () => <svg {...iconProps} viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>,
+  TrendingUp: () => <svg {...iconProps} viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+  Folder: () => <svg {...iconProps} viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2v11z"/></svg>,
+  Brain: () => <svg {...iconProps} viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 017-7z"/><line x1="9" y1="22" x2="15" y2="22"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="14" y1="2" x2="14" y2="5"/></svg>,
+  Globe: () => <svg {...iconProps} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+  Clock: () => <svg {...iconProps} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+};
+
 /* ── Problem Section ── */
 function ProblemSection() {
   const steps = [
-    { n: 1, title: "Finding the portals", desc: "No centralized directory exists. Each of 535 offices publishes — or doesn\u2019t publish — its own submission URL on its own schedule." },
-    { n: 2, title: "Drafting the white paper", desc: "PE line numbers, PBR figures, USASpending history, prior NDAA language — all pulled manually from disconnected federal data sources." },
-    { n: 3, title: "Filling every form by hand", desc: "Google Forms, Word docs, SharePoint portals, proprietary web systems — no two offices use the same format. No reuse is possible." },
+    { n: 1, title: "Finding the portals", desc: "No centralized directory exists. Each of 535 offices publishes - or doesn’t publish - its own submission URL on its own schedule." },
+    { n: 2, title: "Drafting the white paper", desc: "PE line numbers, PBR figures, USASpending history, prior NDAA language - all pulled manually from disconnected federal data sources." },
+    { n: 3, title: "Filling every form by hand", desc: "Google Forms, Word docs, SharePoint portals, proprietary web systems - no two offices use the same format. No reuse is possible." },
     { n: 4, title: "Rewriting district language 15 times", desc: "Every form asks how the request benefits that member\u2019s state or district. The answer must be unique for every single office." },
   ];
 
@@ -17,7 +34,7 @@ function ProblemSection() {
         <h2 className="ls-title">Washington runs on copy-paste. That ends here.</h2>
         <p className="ls-body">
           Every year, thousands of lobbyists manually copy the same information into
-          hundreds of slightly different congressional forms — in inconsistent formats,
+          hundreds of slightly different congressional forms - in inconsistent formats,
           under staggered deadlines, with no shared infrastructure on either side.
         </p>
         <div className="ls-problem-grid">
@@ -32,7 +49,7 @@ function ProblemSection() {
         <div className="ls-callout">
           <div className="ls-callout-text">
             <p className="ls-callout-quote">&ldquo;I wish there were a platform that could streamline this whole process.&rdquo;</p>
-            <p className="ls-callout-cite">— Michael Curcio, Chief of Staff, Rep. Mark Messmer</p>
+            <p className="ls-callout-cite">- Congressional Chief of Staff</p>
           </div>
           <div className="ls-callout-stat">
             <strong>$54M</strong>
@@ -47,10 +64,10 @@ function ProblemSection() {
 /* ── How It Works ── */
 function HowItWorks() {
   const steps = [
-    { num: "1", title: "Build the client profile", desc: "Drop in the client\u2019s URL. Capiro scrapes and structures a baseline profile — company description, issue areas, organizational footprint. Enrich it with white papers, past submissions, and reference documents.", tag: "One-time setup", tagType: "human" },
+    { num: "1", title: "Build the client profile", desc: "Drop in the client’s URL. Capiro scrapes and structures a baseline profile - company description, issue areas, organizational footprint. Enrich it with white papers, past submissions, and reference documents.", tag: "One-time setup", tagType: "human" },
     { num: "2", title: "Create submission topics", desc: "Define each request: submission type (NDAA, Appropriations, or both), request type (Funding, Report Language, Bill Language), and the relevant federal agency and program.", tag: "Practitioner judgment", tagType: "human" },
     { num: "AI", title: "Co-write the white paper in-platform", desc: "Capiro\u2019s AI drafting assistant pulls from the client profile, real-time intelligence feeds, PE line data, USASpending history, and prior NDAA language. You edit; Capiro drafts.", tag: "AI-assisted \u00B7 Human-edited", tagType: "ai" },
-    { num: "4", title: "Select target offices from the directory", desc: "A maintained, current directory of all congressional offices — with submission portal status, live deadlines, subcommittee memberships, and member priorities.", tag: "Live directory \u00B7 Auto-maintained", tagType: "auto" },
+    { num: "4", title: "Select target offices from the directory", desc: "A maintained, current directory of all congressional offices - with submission portal status, live deadlines, subcommittee memberships, and member priorities.", tag: "Live directory · Auto-maintained", tagType: "auto" },
     { num: "AI", title: "AI generates per-office submissions", desc: "Every field across every selected office is pre-populated simultaneously. The district connection statement is AI-generated fresh for each member, using their state context and known priorities.", tag: "AI-generated \u00B7 Character-limit enforced", tagType: "ai" },
     { num: "6", title: "Human review before every send", desc: "Every submission is surfaced to you for review before delivery. Nothing leaves without your explicit approval. This is a core product principle.", tag: "Human gate \u00B7 No exceptions", tagType: "human" },
     { num: "AI", title: "Submit to all offices simultaneously", desc: "Adopted offices receive submissions in a structured Capiro inbox. Non-adopted offices are handled by Capiro\u2019s AI agent, which navigates the portal and submits.", tag: "All channels covered", tagType: "auto" },
@@ -61,7 +78,7 @@ function HowItWorks() {
     <section id="how-it-works" className="ls-section ls-workflow">
       <div className="ls-container">
         <p className="ls-label">The Solution</p>
-        <h2 className="ls-title">From raw client data to confirmed multi-office submission — in one workflow.</h2>
+        <h2 className="ls-title">From raw client data to confirmed multi-office submission - in one workflow.</h2>
         <p className="ls-body">
           Capiro takes a government affairs professional from intake to delivery without breaking their flow.
           Every step is integrated. Nothing lives in a spreadsheet, an email thread, or a browser tab farm.
@@ -88,11 +105,11 @@ function HowItWorks() {
 /* ── AI Transparency ── */
 function AITransparency() {
   const principles = [
-    { icon: "\uD83D\uDD0D", title: "Full Transparency", desc: "Every AI-generated field is visible to you before submission. No black boxes, no hidden logic." },
-    { icon: "\uD83D\uDCCB", title: "AI Trained on Legislative Conventions", desc: "Capiro\u2019s drafting AI is purpose-trained on NDAA and Appropriations submission language — not generic content." },
-    { icon: "\uD83D\uDD12", title: "Data Stays Yours", desc: "Client profiles, white papers, and submission history are yours. Capiro does not use your client data to train shared models." },
-    { icon: "\uD83D\uDCCA", title: "Auditable Submission Record", desc: "Every submission is logged with a timestamp, delivery method, and confirmed status. Full, searchable record." },
-    { icon: "\u2696\uFE0F", title: "Expertise Is Not Automated", desc: "Capiro does not automate which members to approach or what language will resonate. Those things require expertise." },
+    { icon: <Icons.Search />, title: "Full Transparency", desc: "Every AI-generated field is visible to you before submission. No black boxes, no hidden logic." },
+    { icon: <Icons.Clipboard />, title: "AI Trained on Legislative Conventions", desc: "Capiro\u2019s drafting AI is purpose-trained on NDAA and Appropriations submission language - not generic content." },
+    { icon: <Icons.Lock />, title: "Data Stays Yours", desc: "Client profiles, white papers, and submission history are yours. Capiro does not use your client data to train shared models." },
+    { icon: <Icons.BarChart />, title: "Auditable Submission Record", desc: "Every submission is logged with a timestamp, delivery method, and confirmed status. Full, searchable record." },
+    { icon: <Icons.Scale />, title: "Expertise Is Not Automated", desc: "Capiro does not automate which members to approach or what language will resonate. Those things require expertise." },
   ];
 
   return (
@@ -102,7 +119,7 @@ function AITransparency() {
         <h2 className="ls-title">AI does the mechanical work. You make every decision that matters.</h2>
         <p className="ls-body" style={{ color: "#475569" }}>
           Roughly 80% of the submission workflow is mechanical and can be automated.
-          The remaining 20% — the strategic judgment, the language refinement, the final approval — belongs to the practitioner. Always.
+          The remaining 20% - the strategic judgment, the language refinement, the final approval - belongs to the practitioner. Always.
         </p>
         <div className="ls-ai-bar">
           <div className="ls-ai-bar-labels">
@@ -153,7 +170,7 @@ function CompetitiveSection() {
         <h2 className="ls-title">The existing market built excellent tools for everything except the actual submission.</h2>
         <p className="ls-body">
           Bloomberg Government, Quorum, and FiscalNote provide real value for legislative tracking.
-          None of them touch submission execution — the act of getting a request from white paper to congressional inbox.
+          None of them touch submission execution - the act of getting a request from white paper to congressional inbox.
         </p>
         <div className="ls-table-wrap">
           <table className="ls-table">
@@ -187,12 +204,12 @@ function CompetitiveSection() {
 /* ── Defensible Moats ── */
 function MoatsSection() {
   const moats = [
-    { icon: "\uD83D\uDD01", title: "Two-Sided Network Effect", desc: "Every congressional office that adopts Capiro\u2019s inbox makes it faster for every lobbyist. More offices = more value for submitters.", label: "Network \u00B7 Gets stronger over time" },
-    { icon: "\uD83D\uDCC8", title: "Compounding Intelligence", desc: "Each submission enriches your client profiles, improves targeting, and pre-populates future forms with your history.", label: "Data \u00B7 Proprietary to each firm" },
-    { icon: "\uD83D\uDCC2", title: "The Only Portal Directory", desc: "No public, current database of all congressional submission portals with per-office deadlines exists anywhere. Capiro maintains this.", label: "Infrastructure \u00B7 Maintained continuously" },
-    { icon: "\uD83E\uDDE0", title: "Domain-Specific AI", desc: "Capiro\u2019s AI is trained on NDAA and Appropriations language conventions. Generic LLM products cannot replicate this without years of domain data.", label: "AI specialization \u00B7 Legislative-native" },
-    { icon: "\uD83C\uDF10", title: "Free Tier as Network Seed", desc: "Every free-tier submission introduces Capiro to a congressional office. Every free-tier user is a conversion opportunity.", label: "GTM \u00B7 Viral adoption flywheel" },
-    { icon: "\u23F1\uFE0F", title: "Calendar-Locked Switching Costs", desc: "A firm that runs one cycle through Capiro has profiles, white papers, and history already built. Switching means rebuilding all of it.", label: "Retention \u00B7 Annual lock-in by design" },
+    { icon: <Icons.Refresh />, title: "Two-Sided Network Effect", desc: "Every congressional office that adopts Capiro\u2019s inbox makes it faster for every lobbyist. More offices = more value for submitters.", label: "Network \u00B7 Gets stronger over time" },
+    { icon: <Icons.TrendingUp />, title: "Compounding Intelligence", desc: "Each submission enriches your client profiles, improves targeting, and pre-populates future forms with your history.", label: "Data \u00B7 Proprietary to each firm" },
+    { icon: <Icons.Folder />, title: "The Only Portal Directory", desc: "No public, current database of all congressional submission portals with per-office deadlines exists anywhere. Capiro maintains this.", label: "Infrastructure \u00B7 Maintained continuously" },
+    { icon: <Icons.Brain />, title: "Domain-Specific AI", desc: "Capiro\u2019s AI is trained on NDAA and Appropriations language conventions. Generic LLM products cannot replicate this without years of domain data.", label: "AI specialization \u00B7 Legislative-native" },
+    { icon: <Icons.Globe />, title: "Free Tier as Network Seed", desc: "Every free-tier submission introduces Capiro to a congressional office. Every free-tier user is a conversion opportunity.", label: "GTM \u00B7 Viral adoption flywheel" },
+    { icon: <Icons.Clock />, title: "Calendar-Locked Switching Costs", desc: "A firm that runs one cycle through Capiro has profiles, white papers, and history already built. Switching means rebuilding all of it.", label: "Retention \u00B7 Annual lock-in by design" },
   ];
 
   return (
@@ -201,7 +218,7 @@ function MoatsSection() {
         <p className="ls-label">Defensible Advantages</p>
         <h2 className="ls-title">The advantages that compound with every submission.</h2>
         <p className="ls-body">
-          Capiro is not just a better tool — it is a network that gets more valuable the more it is used.
+          Capiro is not just a better tool - it is a network that gets more valuable the more it is used.
         </p>
         <div className="ls-moat-grid">
           {moats.map((m, i) => (
@@ -249,8 +266,8 @@ function YearRound() {
 /* ── Testimonials ── */
 function Testimonials() {
   const cards = [
-    { quote: "I wish there were a platform that could streamline this whole process.", initials: "MC", name: "Michael Curcio", role: "Chief of Staff, Rep. Mark Messmer", date: "March 4, 2026" },
-    { quote: "Everything in this work is driven by where Congress is in the timeline. Organizations that align with the calendar have influence.", initials: "MS", name: "Madison Sparber", role: "Legislative Assistant, Sen. Ted Cruz\u2019s Office", date: "March 20, 2026" },
+    { quote: "I wish there were a platform that could streamline this whole process.", initials: "CS", name: "Congressional Chief of Staff", role: "U.S. House of Representatives", date: "March 4, 2026" },
+    { quote: "Everything in this work is driven by where Congress is in the timeline. Organizations that align with the calendar have influence.", initials: "LA", name: "Senate Legislative Assistant", role: "U.S. Senate", date: "March 20, 2026" },
     { quote: "I would pay for this platform today if it were available.", initials: "SL", name: "Senior Lobbyist (\u00D72, independent)", role: "Washington Government Affairs Practitioners", date: "Early 2026" },
   ];
 
@@ -355,7 +372,7 @@ function FinalCTA() {
     <section id="get-started" className="ls-section ls-cta">
       <div className="ls-container" style={{ textAlign: "center" }}>
         <p className="ls-label ls-label--accent">Early Access</p>
-        <h2 className="ls-title">Fifteen offices. One workflow. Every field pre-populated.</h2>
+        <h2 className="ls-title">All offices. Agentic Workflows. One submission.</h2>
         <p className="ls-body" style={{ margin: "0 auto 44px", color: "rgba(255,255,255,0.5)" }}>
           Join the waitlist for early access to the platform that recovers
           your submission season. No credit card required.

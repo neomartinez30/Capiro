@@ -6,7 +6,7 @@ export default function Features() {
     <section id="features" className="features">
       <div className="features__header">
         <p className="features__eyebrow">Platform in Action</p>
-        <h2 className="features__title">See what Capiro does — not just what it promises</h2>
+        <h2 className="features__title">See what Capiro does - not just what it promises</h2>
         <p className="features__subtitle">
           Two core capabilities that replace hundreds of hours of manual work every submission cycle.
         </p>
@@ -30,7 +30,7 @@ export default function Features() {
         </div>
         <div className="feature-showcase__media">
           <div className="feature-screenshot">
-            <img src="/white-paper.png" alt="AI White Paper Drafting — collaborative editor with AI assistant" />
+            <img src="/white-paper.png" alt="AI White Paper Drafting - collaborative editor with AI assistant" />
           </div>
         </div>
       </div>
