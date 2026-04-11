@@ -13,7 +13,7 @@
 }
 .dashboard__main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 .dashboard__body { flex: 1; display: flex; overflow: hidden; }
-.dashboard__content { flex: 1; overflow-y: auto; padding: var(--sp-6); min-width: 0; }
+.dashboard__content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: var(--sp-6); min-width: 0; }
 
 /* ── Sidebar ─────────────────────────────────────────────────── */
 .sidebar {
