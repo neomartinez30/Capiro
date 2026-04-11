@@ -12,6 +12,15 @@
   overflow: hidden;
   width: calc(100% + 2 * var(--sp-6));
   max-width: calc(100% + 2 * var(--sp-6));
+  box-sizing: border-box;
+}
+
+/* When inside Intelligence Hub, fill parent instead of viewport */
+.intel-hub-content .research-layout {
+  height: 100%;
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .research-sidebar {
@@ -570,6 +579,17 @@
   height: calc(100vh - 56px);
   margin: calc(-1 * var(--sp-6));
   overflow: hidden;
+  width: calc(100% + 2 * var(--sp-6));
+  max-width: calc(100% + 2 * var(--sp-6));
+  box-sizing: border-box;
+}
+
+/* When inside Intelligence Hub, fill parent instead of viewport */
+.intel-hub-content .profile-layout {
+  height: 100%;
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .profile-sidebar {

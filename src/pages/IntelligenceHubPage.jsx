@@ -80,7 +80,7 @@ export default function IntelligenceHubPage() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", margin: "calc(-1 * var(--sp-6))", width: "calc(100% + 2 * var(--sp-6))", maxWidth: "calc(100% + 2 * var(--sp-6))" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)", margin: "calc(-1 * var(--sp-6))", width: "calc(100% + 2 * var(--sp-6))", maxWidth: "calc(100% + 2 * var(--sp-6))", boxSizing: "border-box", overflow: "hidden" }}>
       {/* Intelligence Hub Top Bar */}
       <div style={{
         background: "var(--bg-card)",
@@ -171,31 +171,37 @@ export default function IntelligenceHubPage() {
       </div>
 
       {/* Content Area */}
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        <div style={{ height: "100%", overflow: "auto", padding: activeTab === "stakeholders" ? 0 : "var(--sp-6)" }}>
-          {activeTab === "stakeholders" && !selectedMember && (
-            <StakeholderDirectoryPage onSelectMember={handleSelectMember} />
-          )}
-          {activeTab === "stakeholders" && selectedMember && (
-            <MemberProfilePage
-              memberId={selectedMember}
-              activeTopic={activeTopic}
-              onBack={handleBackToDirectory}
-            />
-          )}
-          {activeTab === "pe-research" && (
+      <div className="intel-hub-content" style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
+        {activeTab === "stakeholders" && !selectedMember && (
+          <StakeholderDirectoryPage onSelectMember={handleSelectMember} />
+        )}
+        {activeTab === "stakeholders" && selectedMember && (
+          <MemberProfilePage
+            memberId={selectedMember}
+            activeTopic={activeTopic}
+            onBack={handleBackToDirectory}
+          />
+        )}
+        {activeTab === "pe-research" && (
+          <div style={{ height: "100%", overflow: "auto", padding: "var(--sp-6)" }}>
             <PEResearchPage />
-          )}
-          {activeTab === "budget-analysis" && (
+          </div>
+        )}
+        {activeTab === "budget-analysis" && (
+          <div style={{ height: "100%", overflow: "auto", padding: "var(--sp-6)" }}>
             <ComingSoon title="Budget Analysis" desc="Automated budget trend analysis with plain-language signals across PE numbers, appropriations accounts, and service branches." />
-          )}
-          {activeTab === "data-sources" && (
+          </div>
+        )}
+        {activeTab === "data-sources" && (
+          <div style={{ height: "100%", overflow: "auto", padding: "var(--sp-6)" }}>
             <ComingSoon title="Data Sources" desc="Unified access to SAM.gov, USASpending.gov, FPDS, DoD comptroller budget justification books, and congress.gov — all in one place." />
-          )}
-          {activeTab === "pm-directory" && (
+          </div>
+        )}
+        {activeTab === "pm-directory" && (
+          <div style={{ height: "100%", overflow: "auto", padding: "var(--sp-6)" }}>
             <ComingSoon title="PM Directory" desc="Internal directory mapping PE numbers to program manager contacts, built from real engagement data across all Capiro users." />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
