@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo, useImperativeHandle, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFirmData } from "../hooks/useFirmData";
 import senators, { getSenatorFields, getSenatorSpecificFields } from "../data/senatorForms";
@@ -363,9 +363,8 @@ const TEAM_MEMBERS = [
   { id: 5, name: "James Park", initials: "JP", color: "#DC2626", online: false },
 ];
 
-function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePaper, onUpdateWhitePaper, onNext, onBack }) {
+function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePaper, onUpdateWhitePaper, onNext, onBack, onAddChatMessage }) {
   const [generating, setGenerating] = useState(false);
-  const [agentMessages, setAgentMessages] = useState([]);
   const [comments, setComments] = useState([]);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -373,14 +372,7 @@ function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePa
   const [selectionRange, setSelectionRange] = useState(null);
   const [activeCommentId, setActiveCommentId] = useState(null);
   const [replyText, setReplyText] = useState("");
-  const chatEndRef = useRef(null);
   const editorRef = useRef(null);
-
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(scrollToBottom, [agentMessages]);
 
   // Track text selection in the editor for commenting
   const handleTextSelect = () => {
@@ -477,10 +469,7 @@ function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePa
 
   const generateDraft = async () => {
     setGenerating(true);
-    setAgentMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: "Analyzing your documents and generating a white paper draft..." },
-    ]);
+    onAddChatMessage?.({ role: "assistant", content: "Analyzing your documents and generating a white paper draft..." });
 
     await new Promise((r) => setTimeout(r, 2000));
 
@@ -491,29 +480,10 @@ function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePa
     const draft = `# ${topicName} — CDS White Paper\n\n## Executive Summary\n\nThis white paper outlines the case for Congressionally Directed Spending in support of ${clientName}'s initiative on ${topicName}. The proposal addresses critical community needs and aligns with federal funding priorities.\n\n## Background & Need\n\n[Based on the uploaded documents${fileNames ? ` (${fileNames})` : ""}, describe the current situation, gap analysis, and community need here.]\n\n## Proposed Solution\n\n[Detail the specific project, program, or initiative that will address the identified need. Include scope, timeline, and key deliverables.]\n\n## Budget & Funding Request\n\n[Provide a detailed budget breakdown. Include matching funds from state, local, or private sources if applicable.]\n\n## Community Impact\n\n[Quantify the expected impact — jobs created, population served, economic multiplier, etc.]\n\n## Organizational Capacity\n\n${clientName} has demonstrated capacity to execute projects of this nature. [Include relevant track record, prior federal funding, and organizational qualifications.]\n\n## Supporting Evidence\n\n[Reference the uploaded supporting documents and any additional data points that strengthen the case.]\n`;
 
     onUpdateWhitePaper(draft);
-    setAgentMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: "I've generated a structured white paper draft based on your client, topic, and uploaded documents. You can edit it directly in the editor below, or ask me to refine specific sections.",
-      },
-    ]);
-    setGenerating(false);
-  };
-
-  const handleChatMessage = async (message) => {
-    setAgentMessages((prev) => [...prev, { role: "user", content: message }]);
-    setGenerating(true);
-
-    await new Promise((r) => setTimeout(r, 1500));
-
-    setAgentMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: `I've noted your feedback: "${message}". In the live version, I'll refine the white paper based on your input using Claude on Bedrock. For now, please edit the document directly.`,
-      },
-    ]);
+    onAddChatMessage?.({
+      role: "assistant",
+      content: "I've generated a structured white paper draft based on your client, topic, and uploaded documents. You can edit it directly in the editor, or use the chatbot to refine specific sections.",
+    });
     setGenerating(false);
   };
 
@@ -738,28 +708,6 @@ function WhitePaperStage({ selectedClient, selectedTopic, uploadedFiles, whitePa
               </div>
             </div>
           )}
-
-          {/* Chat pane */}
-          <div className="sw-paper-chat">
-            <div className="sw-paper-chat__header">AI Assistant</div>
-            <div className="sw-paper-chat__messages">
-              <div className="sw-chat-msg sw-chat-msg--assistant">
-                <p>I can help you write and refine this white paper. Generate a draft to get started, then ask me to improve specific sections.</p>
-              </div>
-              {agentMessages.map((msg, i) => (
-                <div key={i} className={`sw-chat-msg sw-chat-msg--${msg.role}`}>
-                  <p>{msg.content}</p>
-                </div>
-              ))}
-              {generating && (
-                <div className="sw-chat-msg sw-chat-msg--assistant">
-                  <span className="sw-spinner sw-spinner--sm" />
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-            <ChatInput onSend={handleChatMessage} disabled={generating} placeholder="Ask AI to refine the paper..." />
-          </div>
         </div>
       </div>
 
@@ -915,18 +863,11 @@ function SelectOfficesStage({ selectedSenators, onUpdateSenators, allOffices, on
 // ═══════════════════════════════════════════════════════════════
 // Stage 6: FILL FORM (Agentic — Bedrock Claude)
 // ═══════════════════════════════════════════════════════════════
-function FillFormStage({ selectedClient, selectedTopic, selectedSenators, uploadedFiles, whitePaper, formData, onUpdateFormData, onNext, onBack }) {
+const FillFormStage = forwardRef(function FillFormStage({ selectedClient, selectedTopic, selectedSenators, uploadedFiles, whitePaper, formData, onUpdateFormData, onNext, onBack, onAddChatMessage, onSetChatBusy }, ref) {
   const [agentSessionId, setAgentSessionId] = useState(null);
-  const [agentMessages, setAgentMessages] = useState([]);
   const [filling, setFilling] = useState(false);
   const [fillProgress, setFillProgress] = useState(0);
   const [activeSenator, setActiveSenator] = useState(selectedSenators[0] || null);
-  const chatEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-  useEffect(scrollToBottom, [agentMessages]);
 
   const selectedSenatorObjects = useMemo(
     () => senators.filter((s) => selectedSenators.includes(s.id)),
@@ -937,9 +878,8 @@ function FillFormStage({ selectedClient, selectedTopic, selectedSenators, upload
   const startAutoFill = async () => {
     setFilling(true);
     setFillProgress(0);
-    setAgentMessages([
-      { role: "assistant", type: "thinking", content: "Starting agentic form fill..." },
-    ]);
+    onAddChatMessage?.({ role: "assistant", type: "thinking", content: "Starting agentic form fill..." });
+    onSetChatBusy?.(true);
 
     try {
       // Attempt to call the real Bedrock agent backend
@@ -968,30 +908,24 @@ function FillFormStage({ selectedClient, selectedTopic, selectedSenators, upload
     // Process tool calls
     if (response.tool_calls?.length) {
       response.tool_calls.forEach((tc) => {
-        setAgentMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            type: "tool_call",
-            tool: tc.tool,
-            content: `Calling ${tc.tool}...`,
-          },
-        ]);
+        onAddChatMessage?.({
+          role: "assistant",
+          type: "tool_call",
+          tool: tc.tool,
+          content: `Calling ${tc.tool}...`,
+        });
       });
     }
 
     // Process tool results
     if (response.tool_results?.length) {
       response.tool_results.forEach((tr) => {
-        setAgentMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            type: "tool_result",
-            tool: tr.tool,
-            content: typeof tr.result === "string" ? tr.result.substring(0, 200) : JSON.stringify(tr.result).substring(0, 200),
-          },
-        ]);
+        onAddChatMessage?.({
+          role: "assistant",
+          type: "tool_result",
+          tool: tr.tool,
+          content: typeof tr.result === "string" ? tr.result.substring(0, 200) : JSON.stringify(tr.result).substring(0, 200),
+        });
       });
     }
 
@@ -1002,29 +936,24 @@ function FillFormStage({ selectedClient, selectedTopic, selectedSenators, upload
 
     // Agent message
     if (response.agent_response) {
-      setAgentMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: response.agent_response },
-      ]);
+      onAddChatMessage?.({ role: "assistant", content: response.agent_response });
     }
 
     // Handle questions
     if (response.needs_user_input && response.questions?.length) {
       response.questions.forEach((q) => {
-        setAgentMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            type: "question",
-            content: q.question || q,
-            suggestions: q.suggestions || [],
-          },
-        ]);
+        onAddChatMessage?.({
+          role: "assistant",
+          type: "question",
+          content: q.question || q,
+          suggestions: q.suggestions || [],
+        });
       });
     }
 
     setFilling(false);
     setFillProgress(100);
+    onSetChatBusy?.(false);
   };
 
   const simulateAutoFill = async () => {
@@ -1035,15 +964,12 @@ function FillFormStage({ selectedClient, selectedTopic, selectedSenators, upload
       const pct = Math.round(((i + 1) / totalSenators) * 100);
       setFillProgress(pct);
 
-      setAgentMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          type: "tool_call",
-          tool: "browse_senator_website",
-          content: `Checking ${senator.name}'s CDS form requirements...`,
-        },
-      ]);
+      onAddChatMessage?.({
+        role: "assistant",
+        type: "tool_call",
+        tool: "browse_senator_website",
+        content: `Checking ${senator.name}'s CDS form requirements...`,
+      });
 
       await new Promise((r) => setTimeout(r, 800));
 
@@ -1060,31 +986,27 @@ function FillFormStage({ selectedClient, selectedTopic, selectedSenators, upload
         [senator.id]: senatorFormData,
       }));
 
-      setAgentMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: `Filled ${fields.length} fields for ${senator.name} (${senator.state}).`,
-        },
-      ]);
+      onAddChatMessage?.({
+        role: "assistant",
+        content: `Filled ${fields.length} fields for ${senator.name} (${senator.state}).`,
+      });
 
       await new Promise((r) => setTimeout(r, 400));
     }
 
-    setAgentMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: `Auto-fill complete for ${totalSenators} senator form${totalSenators !== 1 ? "s" : ""}. Review the fields below and edit as needed, or ask me to refine specific answers.`,
-      },
-    ]);
+    onAddChatMessage?.({
+      role: "assistant",
+      content: `Auto-fill complete for ${totalSenators} senator form${totalSenators !== 1 ? "s" : ""}. Review the fields below and edit as needed, or use the chatbot to refine specific answers.`,
+    });
 
     setFilling(false);
+    onSetChatBusy?.(false);
   };
 
   const sendAgentMessage = async (message) => {
-    setAgentMessages((prev) => [...prev, { role: "user", content: message }]);
+    onAddChatMessage?.({ role: "user", content: message });
     setFilling(true);
+    onSetChatBusy?.(true);
 
     if (agentSessionId) {
       try {
@@ -1101,15 +1023,16 @@ function FillFormStage({ selectedClient, selectedTopic, selectedSenators, upload
 
     // Simulated response
     await new Promise((r) => setTimeout(r, 1000));
-    setAgentMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: `I've noted your request: "${message}". In the live version with Bedrock, I'll update the form fields accordingly. For now, please edit the fields directly below.`,
-      },
-    ]);
+    onAddChatMessage?.({
+      role: "assistant",
+      content: `I've noted your request: "${message}". In the live version with Bedrock, I'll update the form fields accordingly. For now, please edit the fields directly below.`,
+    });
     setFilling(false);
+    onSetChatBusy?.(false);
   };
+
+  // Expose sendAgentMessage to parent via ref
+  useImperativeHandle(ref, () => ({ sendAgentMessage }), [agentSessionId]);
 
   // Editable form fields for active senator
   const activeFields = activeSenator ? getSenatorFields(activeSenator) : [];
@@ -1137,42 +1060,7 @@ function FillFormStage({ selectedClient, selectedTopic, selectedSenators, upload
         <p>The AI agent will analyze your documents and fill each senator's form automatically.</p>
       </div>
 
-      <div className="sw-fill-layout">
-        {/* Agent chat */}
-        <div className="sw-fill-chat">
-          <div className="sw-paper-chat__header">
-            AI Form Agent
-            {filling && <span className="sw-spinner sw-spinner--sm" style={{ marginLeft: 8 }} />}
-          </div>
-          <div className="sw-paper-chat__messages">
-            <div className="sw-chat-msg sw-chat-msg--assistant">
-              <p>I'll fill out the CDS forms using your client data, topic details, and uploaded documents. Click "Start Auto-Fill" to begin.</p>
-            </div>
-            {agentMessages.map((msg, i) => (
-              <div key={i} className={`sw-chat-msg sw-chat-msg--${msg.role}${msg.type ? ` sw-chat-msg--${msg.type}` : ""}`}>
-                {msg.type === "tool_call" && (
-                  <span className="sw-chat-tool-badge">{msg.tool}</span>
-                )}
-                <p>{msg.content}</p>
-                {msg.suggestions?.length > 0 && (
-                  <div className="sw-chat-suggestions">
-                    {msg.suggestions.map((s, j) => (
-                      <button key={j} className="sw-btn sw-btn--sm" onClick={() => sendAgentMessage(s)}>{s}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            {filling && (
-              <div className="sw-chat-msg sw-chat-msg--assistant">
-                <span className="sw-spinner sw-spinner--sm" />
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-          <ChatInput onSend={sendAgentMessage} disabled={filling} placeholder="Ask the agent to update fields..." />
-        </div>
-
+      <div className="sw-fill-layout sw-fill-layout--no-chat">
         {/* Form pane */}
         <div className="sw-fill-form">
           {/* Start button or progress */}
@@ -1289,7 +1177,7 @@ function FillFormStage({ selectedClient, selectedTopic, selectedSenators, upload
       </div>
     </div>
   );
-}
+});
 
 // ═══════════════════════════════════════════════════════════════
 // Stage 7: ADD LANGUAGE (Insert white paper content into form)
@@ -1721,6 +1609,139 @@ function ChatInput({ onSend, disabled, placeholder }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// DOCKED CHATBOT — Unified assistant for White Paper & CDS Form
+// ═══════════════════════════════════════════════════════════════
+function DockedChatbot({ open, onToggle, mode, onSetMode, wpMessages, cdsMessages, onSendWp, onSendCds, busy, stage }) {
+  const chatEndRef = useRef(null);
+  const messages = mode === "whitepaper" ? wpMessages : mode === "cds" ? cdsMessages : [];
+  const onSend = mode === "whitepaper" ? onSendWp : mode === "cds" ? onSendCds : null;
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, open]);
+
+  const avatarFallback = (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
+    </svg>
+  );
+
+  return (
+    <>
+      {/* FAB toggle */}
+      {!open && (
+        <button className="sw-chatbot-fab" onClick={onToggle} title="Open AI Assistant">
+          <img
+            src="/bot-avatar.png"
+            alt=""
+            className="sw-chatbot-fab__avatar"
+            onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
+          />
+          <span className="sw-chatbot-fab__fallback" style={{ display: "none" }}>{avatarFallback}</span>
+          {(wpMessages.length > 0 || cdsMessages.length > 0) && <span className="sw-chatbot-fab__badge" />}
+        </button>
+      )}
+
+      {/* Chat panel */}
+      {open && (
+        <div className="sw-chatbot">
+          {/* Header */}
+          <div className="sw-chatbot__header">
+            <div className="sw-chatbot__header-left">
+              <div className="sw-chatbot__avatar">
+                <img
+                  src="/bot-avatar.png"
+                  alt=""
+                  className="sw-chatbot__avatar-img"
+                  onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
+                />
+                <span className="sw-chatbot__avatar-fallback" style={{ display: "none" }}>{avatarFallback}</span>
+              </div>
+              <div>
+                <div className="sw-chatbot__title">Capiro AI</div>
+                <div className="sw-chatbot__subtitle">
+                  {mode === "whitepaper" ? "White Paper Assistant" : mode === "cds" ? "CDS Form Agent" : "Select a mode"}
+                </div>
+              </div>
+            </div>
+            <button className="sw-chatbot__close" onClick={onToggle} title="Close">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          {/* Mode selector */}
+          <div className="sw-chatbot__modes">
+            <button
+              className={`sw-chatbot__mode-btn${mode === "whitepaper" ? " sw-chatbot__mode-btn--active" : ""}`}
+              onClick={() => onSetMode("whitepaper")}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              White Paper
+            </button>
+            <button
+              className={`sw-chatbot__mode-btn${mode === "cds" ? " sw-chatbot__mode-btn--active" : ""}`}
+              onClick={() => onSetMode("cds")}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              CDS Form
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="sw-chatbot__messages">
+            {!mode && (
+              <div className="sw-chat-msg sw-chat-msg--assistant">
+                <p>Hi! I'm your Capiro AI assistant. Choose a mode above to get started — I can help write your white paper or fill CDS forms.</p>
+              </div>
+            )}
+            {mode === "whitepaper" && messages.length === 0 && (
+              <div className="sw-chat-msg sw-chat-msg--assistant">
+                <p>I can help you write and refine your white paper. {stage !== 4 ? "Navigate to Step 4 (White Paper) to generate a draft, then ask me to improve specific sections." : "Generate a draft first, then ask me to improve specific sections."}</p>
+              </div>
+            )}
+            {mode === "cds" && messages.length === 0 && (
+              <div className="sw-chat-msg sw-chat-msg--assistant">
+                <p>I'll help fill out CDS forms using your client data and documents. {stage !== 6 ? "Navigate to Step 6 (Fill Form) to start auto-fill." : "Click 'Start Auto-Fill' to begin, then ask me to refine specific answers."}</p>
+              </div>
+            )}
+            {messages.map((msg, i) => (
+              <div key={i} className={`sw-chat-msg sw-chat-msg--${msg.role}${msg.type ? ` sw-chat-msg--${msg.type}` : ""}`}>
+                {msg.type === "tool_call" && (
+                  <span className="sw-chat-tool-badge">{msg.tool}</span>
+                )}
+                <p>{msg.content}</p>
+                {msg.suggestions?.length > 0 && (
+                  <div className="sw-chat-suggestions">
+                    {msg.suggestions.map((s, j) => (
+                      <button key={j} className="sw-btn sw-btn--sm" onClick={() => onSend?.(s)}>{s}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            {busy && (
+              <div className="sw-chat-msg sw-chat-msg--assistant">
+                <span className="sw-spinner sw-spinner--sm" />
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Input */}
+          {mode && (
+            <ChatInput
+              onSend={onSend}
+              disabled={busy || !mode}
+              placeholder={mode === "whitepaper" ? "Ask AI to refine the paper..." : "Ask the agent to update fields..."}
+            />
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
 function generateAutoFill(field, client, topic) {
@@ -1768,6 +1789,50 @@ export default function SubmissionWizard() {
   const [whitePaper, setWhitePaper] = useState("");
   const [selectedSenators, setSelectedSenators] = useState([]);
   const [formData, setFormData] = useState({});
+
+  // Unified chatbot state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMode, setChatMode] = useState(null); // "whitepaper" | "cds"
+  const [wpMessages, setWpMessages] = useState([]);
+  const [cdsMessages, setCdsMessages] = useState([]);
+  const [chatBusy, setChatBusy] = useState(false);
+
+  const addWpMessage = useCallback((msg) => {
+    setWpMessages((prev) => [...prev, msg]);
+  }, []);
+
+  const addCdsMessage = useCallback((msg) => {
+    setCdsMessages((prev) => [...prev, msg]);
+  }, []);
+
+  // White paper chat handler
+  const handleWpChatSend = useCallback(async (message) => {
+    addWpMessage({ role: "user", content: message });
+    setChatBusy(true);
+    await new Promise((r) => setTimeout(r, 1500));
+    addWpMessage({
+      role: "assistant",
+      content: `I've noted your feedback: "${message}". In the live version, I'll refine the white paper based on your input using Claude on Bedrock. For now, please edit the document directly.`,
+    });
+    setChatBusy(false);
+  }, [addWpMessage]);
+
+  // CDS form chat handler (delegated to FillFormStage via ref)
+  const cdsAgentRef = useRef(null);
+  const handleCdsChatSend = useCallback(async (message) => {
+    if (cdsAgentRef.current?.sendAgentMessage) {
+      cdsAgentRef.current.sendAgentMessage(message);
+    } else {
+      addCdsMessage({ role: "user", content: message });
+      setChatBusy(true);
+      await new Promise((r) => setTimeout(r, 1000));
+      addCdsMessage({
+        role: "assistant",
+        content: `Navigate to the "Fill Form" stage (Step 6) and start auto-fill first, then I can help refine the form fields.`,
+      });
+      setChatBusy(false);
+    }
+  }, [addCdsMessage]);
 
   const goTo = (s) => {
     setStage(s);
@@ -1841,6 +1906,7 @@ export default function SubmissionWizard() {
             onUpdateWhitePaper={setWhitePaper}
             onNext={() => goTo(5)}
             onBack={() => goTo(3)}
+            onAddChatMessage={addWpMessage}
           />
         )}
         {stage === 5 && (
@@ -1863,6 +1929,9 @@ export default function SubmissionWizard() {
             onUpdateFormData={setFormData}
             onNext={() => goTo(7)}
             onBack={() => goTo(5)}
+            onAddChatMessage={addCdsMessage}
+            onSetChatBusy={setChatBusy}
+            ref={cdsAgentRef}
           />
         )}
         {stage === 7 && (
@@ -1889,6 +1958,20 @@ export default function SubmissionWizard() {
           />
         )}
       </div>
+
+      {/* Unified Docked Chatbot */}
+      <DockedChatbot
+        open={chatOpen}
+        onToggle={() => setChatOpen((v) => !v)}
+        mode={chatMode}
+        onSetMode={setChatMode}
+        wpMessages={wpMessages}
+        cdsMessages={cdsMessages}
+        onSendWp={handleWpChatSend}
+        onSendCds={handleCdsChatSend}
+        busy={chatBusy}
+        stage={stage}
+      />
     </div>
   );
 }
