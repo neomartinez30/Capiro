@@ -72,8 +72,9 @@ export default function LoginModal({ isOpen, initialMode = "login", onClose }) {
     try {
       await confirmSignUp({ email: pendingEmail, code: confirmCode });
       // Now sign in
-      const u = await signIn({ email: pendingEmail, password });
-      navigate(u.orgId ? "/app" : "/onboarding");
+      await signIn({ email: pendingEmail, password });
+      // New signup always goes to onboarding
+      navigate("/onboarding");
       onClose();
     } catch (err) {
       setError(friendlyError(err.message || "Invalid code"));

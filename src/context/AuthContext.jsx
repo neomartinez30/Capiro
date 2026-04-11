@@ -47,27 +47,41 @@ export function AuthProvider({ children }) {
       const cognitoUser = await getCurrentUser();
       const attributes = await fetchUserAttributes();
       const appUser = buildUser(cognitoUser, attributes);
-      // Restore orgId from localStorage if previously onboarded
-      const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
-      if (savedOrg) {
-        try {
-          const org = JSON.parse(savedOrg);
-          appUser.orgId = org.id;
-          appUser.orgName = org.name;
-          // Validate the org still exists in DynamoDB
-          const { getFirmData } = await import("../services/api");
-          const firmResult = await getFirmData(org.id).catch(() => null);
-          if (!firmResult?.firm) {
-            // Firm no longer exists — clear stale org and force re-onboarding
-            localStorage.removeItem(`capiro_org_${appUser.email}`);
-            appUser.orgId = null;
-            appUser.orgName = null;
+      // Restore orgId: try DynamoDB first, fall back to localStorage
+      try {
+        const { getUserProfile } = await import("../services/api");
+        const profileResult = await getUserProfile(appUser.email);
+        if (profileResult?.profile?.firmId) {
+          const p = profileResult.profile;
+          appUser.orgId = p.firmId;
+          appUser.orgName = p.firmName;
+          appUser.name = p.name || appUser.name;
+          // Also update localStorage as cache
+          localStorage.setItem(`capiro_org_${appUser.email}`, JSON.stringify({ id: p.firmId, name: p.firmName }));
+        } else {
+          // Fall back to localStorage
+          const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
+          if (savedOrg) {
+            try {
+              const org = JSON.parse(savedOrg);
+              appUser.orgId = org.id;
+              appUser.orgName = org.name;
+            } catch {
+              localStorage.removeItem(`capiro_org_${appUser.email}`);
+            }
           }
-        } catch {
-          // If validation fails, clear stale org data
-          localStorage.removeItem(`capiro_org_${appUser.email}`);
-          appUser.orgId = null;
-          appUser.orgName = null;
+        }
+      } catch {
+        // If DynamoDB fails, try localStorage
+        const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
+        if (savedOrg) {
+          try {
+            const org = JSON.parse(savedOrg);
+            appUser.orgId = org.id;
+            appUser.orgName = org.name;
+          } catch {
+            localStorage.removeItem(`capiro_org_${appUser.email}`);
+          }
         }
       }
       setUser(appUser);
@@ -92,22 +106,32 @@ export function AuthProvider({ children }) {
       const attributes = await fetchUserAttributes();
       const appUser = buildUser(cognitoUser, attributes);
 
-      // Restore org — validate it still exists
-      const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
-      if (savedOrg) {
-        try {
-          const org = JSON.parse(savedOrg);
-          const { getFirmData } = await import("../services/api");
-          const firmResult = await getFirmData(org.id).catch(() => null);
-          if (firmResult?.firm) {
+      // Restore org from DynamoDB, fall back to localStorage
+      try {
+        const { getUserProfile } = await import("../services/api");
+        const profileResult = await getUserProfile(appUser.email);
+        if (profileResult?.profile?.firmId) {
+          appUser.orgId = profileResult.profile.firmId;
+          appUser.orgName = profileResult.profile.firmName;
+          localStorage.setItem(`capiro_org_${appUser.email}`, JSON.stringify({ id: appUser.orgId, name: appUser.orgName }));
+        } else {
+          const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
+          if (savedOrg) {
+            try {
+              const org = JSON.parse(savedOrg);
+              appUser.orgId = org.id;
+              appUser.orgName = org.name;
+            } catch { localStorage.removeItem(`capiro_org_${appUser.email}`); }
+          }
+        }
+      } catch {
+        const savedOrg = localStorage.getItem(`capiro_org_${appUser.email}`);
+        if (savedOrg) {
+          try {
+            const org = JSON.parse(savedOrg);
             appUser.orgId = org.id;
             appUser.orgName = org.name;
-          } else {
-            // Stale — firm no longer in DB
-            localStorage.removeItem(`capiro_org_${appUser.email}`);
-          }
-        } catch {
-          localStorage.removeItem(`capiro_org_${appUser.email}`);
+          } catch { localStorage.removeItem(`capiro_org_${appUser.email}`); }
         }
       }
 
@@ -120,6 +144,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signUp = useCallback(async ({ email, password, name }) => {
+    // Clear any stale org cache for this email (e.g. re-registration after account deletion)
+    localStorage.removeItem(`capiro_org_${email}`);
     try {
       const result = await amplifySignUp({
         username: email,
@@ -153,21 +179,38 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    const userEmail = user?.email;
     try {
       await amplifySignOut();
     } catch {
       // Ignore errors on sign out
     }
+    // Clear cached org data
+    if (userEmail) {
+      localStorage.removeItem(`capiro_org_${userEmail}`);
+    }
     setUser(null);
     setIsNewUser(false);
     setConfirmationPending(null);
-  }, []);
+  }, [user]);
 
-  const completeOnboarding = useCallback((orgData) => {
+  const completeOnboarding = useCallback(async (orgData) => {
     setUser(prev => {
       const updated = { ...prev, orgId: orgData.id, orgName: orgData.name };
-      // Persist org selection
+      // Persist org selection to localStorage
       localStorage.setItem(`capiro_org_${prev.email}`, JSON.stringify({ id: orgData.id, name: orgData.name }));
+      // Also persist to DynamoDB
+      import("../services/api").then(({ saveUserProfile }) => {
+        saveUserProfile({
+          email: prev.email,
+          userId: prev.id,
+          firmId: orgData.id,
+          firmName: orgData.name,
+          name: prev.name,
+          role: prev.role,
+          onboardingData: orgData.onboardingData || {},
+        }).catch(err => console.error("Failed to save user profile:", err));
+      });
       return updated;
     });
     setIsNewUser(false);

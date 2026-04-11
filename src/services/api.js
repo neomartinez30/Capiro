@@ -31,12 +31,30 @@ async function request(url, options = {}) {
 }
 
 /**
- * Search the LDA registry for firms (via Senate LDA API)
+ * Search the LDA registry for firms (via Senate LDA API directly)
+ * Uses registrant_name param for actual filtering
  */
 export async function searchFirms(query) {
-  return request(
-    `${API_URL}?action=search&search=${encodeURIComponent(query)}`
+  const SENATE_API = "https://lda.senate.gov/api/v1/registrants/";
+  const res = await fetch(
+    `${SENATE_API}?registrant_name=${encodeURIComponent(query)}&page_size=25`,
+    { headers: { Accept: "application/json" } }
   );
+  if (!res.ok) throw new Error(`Senate LDA API error ${res.status}`);
+  const data = await res.json();
+  return {
+    count: data.count,
+    results: (data.results || []).map((r) => ({
+      id: String(r.id),
+      name: r.name,
+      address: [r.address_1, r.city, r.state, r.zip].filter(Boolean).join(", "),
+      description: r.description || "",
+      contactName: r.contact_name || "",
+      phone: r.contact_telephone || "",
+      ldaRegistrationId: String(r.id),
+      registrationDate: r.dt_updated || "",
+    })),
+  };
 }
 
 /**
@@ -92,6 +110,25 @@ export async function deleteItem({ firmId, type, id }) {
     method: "POST",
     body: JSON.stringify({ firmId, type, id }),
   });
+}
+
+/**
+ * Save user profile to DynamoDB (maps email → firm)
+ */
+export async function saveUserProfile({ email, userId, firmId, firmName, name, role, onboardingData }) {
+  return request(`${API_URL}?action=saveUserProfile`, {
+    method: "POST",
+    body: JSON.stringify({ email, userId, firmId, firmName, name, role, onboardingData }),
+  });
+}
+
+/**
+ * Get user profile from DynamoDB by email
+ */
+export async function getUserProfile(email) {
+  return request(
+    `${API_URL}?action=getUserProfile&email=${encodeURIComponent(email)}`
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
