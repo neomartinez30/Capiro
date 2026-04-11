@@ -31,20 +31,32 @@ async function request(url, options = {}) {
 }
 
 /**
- * Search the LDA registry for firms (via Senate LDA API directly)
- * Uses registrant_name param for actual filtering
+ * Search the LDA registry for firms (via Senate LDA API)
+ * Uses /lda-api proxy (Vite dev proxy + Amplify rewrite in prod)
+ * Filters by registrant_name and only returns accounts active in last 2 years
  */
 export async function searchFirms(query) {
-  const SENATE_API = "https://lda.senate.gov/api/v1/registrants/";
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+  const dtSince = twoYearsAgo.toISOString().split("T")[0];
+
   const res = await fetch(
-    `${SENATE_API}?registrant_name=${encodeURIComponent(query)}&page_size=25`,
+    `/lda-api/registrants/?registrant_name=${encodeURIComponent(query)}&ordering=-dt_updated&page_size=50`,
     { headers: { Accept: "application/json" } }
   );
   if (!res.ok) throw new Error(`Senate LDA API error ${res.status}`);
   const data = await res.json();
+
+  // Client-side filter: only show registrants updated in last 2 years
+  const cutoff = twoYearsAgo.getTime();
+  const filtered = (data.results || []).filter((r) => {
+    if (!r.dt_updated) return false;
+    return new Date(r.dt_updated).getTime() >= cutoff;
+  });
+
   return {
-    count: data.count,
-    results: (data.results || []).map((r) => ({
+    count: filtered.length,
+    results: filtered.map((r) => ({
       id: String(r.id),
       name: r.name,
       address: [r.address_1, r.city, r.state, r.zip].filter(Boolean).join(", "),

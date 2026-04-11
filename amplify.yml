@@ -27,3 +27,7 @@ frontend:
       headers:
         - key: 'Cache-Control'
           value: 'public, max-age=31536000, immutable'
+customRules:
+  - source: /lda-api/<*>
+    target: https://lda.senate.gov/api/v1/<*>
+    status: '200'
