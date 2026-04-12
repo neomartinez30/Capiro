@@ -5,7 +5,6 @@
 .submissions-page {
   padding: var(--sp-6);
   background: var(--bg);
-  min-height: 100vh;
   color: var(--text);
 }
 
