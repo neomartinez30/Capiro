@@ -1,4 +1,4 @@
-# Capiro: Building a Production SaaS Platform with Claude Cowork
+# Capiro: Building a Production SaaS Platform for Congress
 
 ## Project Overview
 
