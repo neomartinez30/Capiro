@@ -103,6 +103,10 @@ export const handler = async (event) => {
         return await handleGetOffices();
       case "getFilingPeriods":
         return await handleGetFilingPeriods();
+      case "saveUserProfile":
+        return await handleSaveUserProfile(body);
+      case "getUserProfile":
+        return await handleGetUserProfile(params);
       default:
         return fail(400, "Unknown action: " + action);
     }
@@ -629,6 +633,64 @@ async function handleGetFilingPeriods() {
   }
 
   return ok({ filingPeriods: periods.filter((p) => p.daysLeft < 400) });
+}
+
+// ════════════════════════════════════════════════════════════
+// ACTION: Save user profile (maps Cognito user → firm)
+// ════════════════════════════════════════════════════════════
+async function handleSaveUserProfile(body) {
+  const { email, userId, firmId, firmName, name, role, onboardingData } = body;
+  if (!email) return fail(400, "Missing email");
+
+  const now = new Date().toISOString();
+
+  await ddb.send(
+    new PutCommand({
+      TableName: TABLE,
+      Item: {
+        PK: `USER#${email.toLowerCase()}`,
+        SK: "PROFILE",
+        email: email.toLowerCase(),
+        userId: userId || null,
+        firmId: firmId || null,
+        firmName: firmName || null,
+        name: name || "",
+        role: role || "firm_admin",
+        onboardingData: onboardingData || {},
+        entityType: "user_profile",
+        createdAt: now,
+        updatedAt: now,
+      },
+    })
+  );
+
+  return ok({ saved: true, email: email.toLowerCase() });
+}
+
+// ════════════════════════════════════════════════════════════
+// ACTION: Get user profile by email
+// ════════════════════════════════════════════════════════════
+async function handleGetUserProfile(params) {
+  const email = params.email;
+  if (!email) return fail(400, "Missing ?email= parameter");
+
+  const result = await ddb.send(
+    new QueryCommand({
+      TableName: TABLE,
+      KeyConditionExpression: "PK = :pk AND SK = :sk",
+      ExpressionAttributeValues: {
+        ":pk": `USER#${email.toLowerCase()}`,
+        ":sk": "PROFILE",
+      },
+    })
+  );
+
+  if (!result.Items || result.Items.length === 0) {
+    return ok({ profile: null });
+  }
+
+  const profile = stripKeys(result.Items[0]);
+  return ok({ profile });
 }
 
 // ── Seed offices (fallback if Congress.gov is unavailable) ──

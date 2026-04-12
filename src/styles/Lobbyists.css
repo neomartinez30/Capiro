@@ -192,3 +192,26 @@
 }
 
 .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .lobbyists-page { padding: 16px; }
+  .controls-bar { flex-wrap: wrap; }
+  .search-box { max-width: 100%; flex: 1 1 100%; }
+  .lobbyists-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .list-header,
+  .list-row { grid-template-columns: 2fr 2fr 1fr; }
+  .list-header > :nth-child(3),
+  .list-row > :nth-child(3) { display: none; }
+  .detail-panel { width: 100%; }
+  .genai-modal { width: 95vw; max-width: 560px; }
+}
+@media (max-width: 600px) {
+  .lobbyists-page { padding: 12px; }
+  .lobbyists-grid { grid-template-columns: 1fr; }
+  .list-header,
+  .list-row { grid-template-columns: 1fr 1fr; }
+  .list-header > :nth-child(n+3),
+  .list-row > :nth-child(n+3) { display: none; }
+  .lobbyists-page .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+}

@@ -766,3 +766,26 @@
 .modal__actions .btn {
   flex: 1;
 }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .entities-page { padding: var(--sp-4); }
+  .entities-header { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
+  .entities-header__title { font-size: 22px; }
+  .entities-controls { flex-wrap: wrap; }
+  .search-box { max-width: 100%; flex: 1 1 100%; }
+  .entities-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .entities-list__cell--tags,
+  .entities-list__cell--topics { display: none; }
+  .detail-panel__content { max-width: 100%; }
+}
+@media (max-width: 600px) {
+  .entities-page { padding: var(--sp-3); }
+  .entities-grid { grid-template-columns: 1fr; }
+  .entities-list__cell--spend,
+  .entities-list__cell--status { display: none; }
+  .entities-list__row { padding: var(--sp-3); }
+  .modal { max-width: 95vw; margin: var(--sp-3); }
+  .detail-panel { align-items: stretch; }
+  .detail-panel__content { max-width: 100%; width: 100%; }
+}

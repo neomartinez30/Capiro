@@ -21,14 +21,13 @@ const searchLDAFirms = async (query) => {
       return data.results.map(r => ({
         ...r,
         id: r.id || "lda_" + (r.ldaRegistrationId || Math.random().toString(36).slice(2, 10)),
-        activeClients: null,
+        activeClients: r.activeClients ?? null,
       }));
     }
-    // API returned 0 results
     return [];
   } catch (err) {
     console.error("[Capiro] Search failed:", err.message);
-    throw err; // Let caller handle it
+    throw err;
   }
 };
 
@@ -36,9 +35,16 @@ const OnboardingPage = () => {
   const { user, completeOnboarding } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const TOTAL_STEPS = 6;
+
   const [firmData, setFirmData] = useState({
     name: "", website: "", address: "", description: "",
     phone: "", ldaRegistrationId: "", contactName: "",
+    // New intake fields
+    priorEngagements: "",
+    desiredAskAmount: "",
+    knownRelationships: "",
+    topicInterests: "",
   });
   const [teamMembers, setTeamMembers] = useState([{ email: "", role: "Lobbyist" }]);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -53,6 +59,12 @@ const OnboardingPage = () => {
   const [selectedFirm, setSelectedFirm] = useState(null);
   const searchRef = useRef(null);
   const searchTimerRef = useRef(null);
+
+  // AI NDAA state (Step 3)
+  const [ndaaLanguage, setNdaaLanguage] = useState("");
+  const [ndaaLoading, setNdaaLoading] = useState(false);
+  const [ndaaGenerated, setNdaaGenerated] = useState(false);
+  const [submissionType, setSubmissionType] = useState("CDS Appropriations");
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -88,7 +100,7 @@ const OnboardingPage = () => {
         const results = await searchLDAFirms(val);
         setSearchResults(results);
         if (results.length === 0) {
-          setScanError(null); // No error, just no results
+          setScanError(null);
         }
       } catch (err) {
         console.error("[Capiro] Search error:", err);
@@ -105,7 +117,8 @@ const OnboardingPage = () => {
     setSelectedFirm(firm);
     setSearchQuery(firm.name);
     setShowResults(false);
-    setFirmData({
+    setFirmData(prev => ({
+      ...prev,
       name: firm.name,
       website: firm.website || "",
       address: firm.address || "",
@@ -113,7 +126,7 @@ const OnboardingPage = () => {
       phone: firm.phone || "",
       ldaRegistrationId: firm.ldaRegistrationId || "",
       contactName: firm.contactName || "",
-    });
+    }));
     setScanError(null);
   }, []);
 
@@ -130,7 +143,11 @@ const OnboardingPage = () => {
     setSelectedFirm(null);
     setSearchResults([]);
     setShowResults(false);
-    setFirmData({ name: "", website: "", address: "", description: "", phone: "", ldaRegistrationId: "", contactName: "" });
+    setFirmData(prev => ({
+      ...prev,
+      name: "", website: "", address: "", description: "",
+      phone: "", ldaRegistrationId: "", contactName: "",
+    }));
   }, []);
 
   // Team members
@@ -150,13 +167,42 @@ const OnboardingPage = () => {
     setTeamMembers((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  // Generate AI NDAA language
+  const generateNDAALanguage = useCallback(async () => {
+    setNdaaLoading(true);
+    setNdaaGenerated(false);
+    try {
+      // Build a contextual NDAA draft from firm details
+      const firmName = firmData.name || "the firm";
+      const topics = firmData.topicInterests || "government affairs";
+      const priorWork = firmData.priorEngagements || "previous legislative engagements";
+      const askAmount = firmData.desiredAskAmount
+        ? `$${Number(firmData.desiredAskAmount).toLocaleString()}`
+        : "the requested amount";
+      const relationships = firmData.knownRelationships || "key congressional stakeholders";
+
+      // Simulate AI generation (in production this would call Bedrock)
+      await new Promise(r => setTimeout(r, 1800));
+
+      const draft = `SECTION 1. SHORT TITLE.\n\nThis section may be cited as the "${firmName} Defense Authorization Request".\n\nSECTION 2. PURPOSE.\n\nThe purpose of this submission is to request authorization and appropriation of ${askAmount} for programs and activities related to ${topics}, in alignment with the National Defense Authorization Act (NDAA) for Fiscal Year 2027.\n\nSECTION 3. BACKGROUND AND JUSTIFICATION.\n\n${firmName} has extensive experience in ${priorWork}, with established relationships with ${relationships}. This request addresses critical needs in the following areas:\n\n(a) PROGRAM AUTHORIZATION.—The Secretary of Defense is authorized to carry out programs related to ${topics} as described in this submission.\n\n(b) FUNDING AUTHORIZATION.—There is authorized to be appropriated ${askAmount} for fiscal year 2027 for the programs described in subsection (a).\n\n(c) REPORTING REQUIREMENT.—Not later than 180 days after the date of enactment of this Act, the Secretary shall submit to the congressional defense committees a report on the implementation of programs authorized under this section.\n\nSECTION 4. AUTHORIZATION OF APPROPRIATIONS.\n\nThere is authorized to be appropriated to the Department of Defense ${askAmount} for fiscal year 2027 for the purpose of carrying out the activities described in this submission.`;
+
+      setNdaaLanguage(draft);
+      setNdaaGenerated(true);
+    } catch (err) {
+      console.error("NDAA generation failed:", err);
+      setScanError("Failed to generate NDAA language. Please try again.");
+    } finally {
+      setNdaaLoading(false);
+    }
+  }, [firmData]);
+
   // Navigation
   const handleNext = useCallback(() => {
     if (step === 2 && !firmData.name.trim()) {
       setScanError("Firm name is required. Search for your firm above or enter it manually.");
       return;
     }
-    if (step < 5) setStep(step + 1);
+    if (step < TOTAL_STEPS) setStep(step + 1);
   }, [step, firmData.name]);
 
   const handlePrev = useCallback(() => {
@@ -164,7 +210,6 @@ const OnboardingPage = () => {
   }, [step]);
 
   const handleComplete = useCallback(async () => {
-    // Generate a stable firmId from the LDA registrant ID or random
     const firmId = selectedFirm?.id
       ? `firm_${selectedFirm.id}`
       : "firm_" + Math.random().toString(36).slice(2, 10);
@@ -173,7 +218,6 @@ const OnboardingPage = () => {
 
     setSetupLoading(true);
 
-    // Call backend to store firm + pull LDA data (clients, lobbyists, topics)
     try {
       await api.setupFirm({
         firmId,
@@ -186,20 +230,46 @@ const OnboardingPage = () => {
           phone: firmData.phone,
           ldaRegistrationId: firmData.ldaRegistrationId,
           contactName: firmData.contactName,
+          priorEngagements: firmData.priorEngagements,
+          desiredAskAmount: firmData.desiredAskAmount,
+          knownRelationships: firmData.knownRelationships,
+          topicInterests: firmData.topicInterests,
           plan: selectedPlan,
           teamMembers: teamMembers.filter((m) => m.email.trim()),
+          ndaaLanguage: ndaaLanguage || null,
+          submissionType: submissionType || null,
         },
       });
     } catch (err) {
       console.error("Failed to set up firm:", err);
-      // Continue anyway — user can still use the app
     } finally {
       setSetupLoading(false);
     }
 
+    // Save user profile to DynamoDB
+    try {
+      await api.saveUserProfile({
+        email: user?.email,
+        userId: user?.id,
+        firmId,
+        firmName: firmData.name,
+        name: user?.name,
+        role: user?.role || "firm_admin",
+        onboardingData: {
+          priorEngagements: firmData.priorEngagements,
+          desiredAskAmount: firmData.desiredAskAmount,
+          knownRelationships: firmData.knownRelationships,
+          topicInterests: firmData.topicInterests,
+          submissionType,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to save user profile:", err);
+    }
+
     completeOnboarding({ id: firmId, name: firmData.name });
     navigate("/app");
-  }, [firmData, selectedPlan, teamMembers, selectedFirm, completeOnboarding, navigate]);
+  }, [firmData, selectedPlan, teamMembers, selectedFirm, ndaaLanguage, submissionType, user, completeOnboarding, navigate]);
 
   const userName = user?.name || "there";
 
@@ -208,12 +278,12 @@ const OnboardingPage = () => {
       <div className="onboarding-wrapper">
         {/* Progress bar */}
         <div className="onboarding-progress">
-          <div className="onboarding-progress__bar" style={{ width: `${(step / 5) * 100}%` }} />
+          <div className="onboarding-progress__bar" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
         </div>
 
         {/* Step indicators */}
         <div className="onboarding-indicators">
-          {[1, 2, 3, 4, 5].map((s) => (
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
             <button
               key={s}
               className={`indicator ${s === step ? "indicator--active" : s < step ? "indicator--completed" : ""}`}
@@ -320,13 +390,19 @@ const OnboardingPage = () => {
                           <div className="lda-result-name">{firm.name}</div>
                           <div className="lda-result-meta">
                             <span className="lda-result-id">LDA #{firm.ldaRegistrationId}</span>
-                            <span className="lda-result-dot" />
-                            <span>{firm.address.split(",").slice(-2).join(",").trim()}</span>
+                            {firm.address && (
+                              <>
+                                <span className="lda-result-dot" />
+                                <span>{firm.address.split(",").slice(-2).join(",").trim()}</span>
+                              </>
+                            )}
                           </div>
                         </div>
-                        <div className="lda-result-badge">
-                          {firm.activeClients} client{firm.activeClients !== 1 ? "s" : ""}
-                        </div>
+                        {firm.activeClients != null && (
+                          <div className="lda-result-badge">
+                            {firm.activeClients} client{firm.activeClients !== 1 ? "s" : ""}
+                          </div>
+                        )}
                       </button>
                     ))
                   ) : searchQuery.length >= 2 ? (
@@ -438,13 +514,189 @@ const OnboardingPage = () => {
                 />
               </div>
 
+              {/* ── New Intake Fields ── */}
+              <div className="form-divider">
+                <span>Engagement Details</span>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="priorEngagements" className="form-label">Prior Engagements</label>
+                <textarea
+                  id="priorEngagements" name="priorEngagements"
+                  placeholder="Describe any prior congressional or agency engagements..."
+                  value={firmData.priorEngagements}
+                  onChange={handleFirmInputChange}
+                  className="form-input form-textarea"
+                  rows="3"
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group form-group--half">
+                  <label htmlFor="desiredAskAmount" className="form-label">Desired Ask Amount ($)</label>
+                  <input
+                    id="desiredAskAmount" type="number" name="desiredAskAmount"
+                    placeholder="e.g., 5000000"
+                    value={firmData.desiredAskAmount}
+                    onChange={handleFirmInputChange}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group form-group--half">
+                  <label htmlFor="topicInterests" className="form-label">Topic Interests</label>
+                  <input
+                    id="topicInterests" name="topicInterests"
+                    placeholder="e.g., Defense, Healthcare, Energy"
+                    value={firmData.topicInterests}
+                    onChange={handleFirmInputChange}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="knownRelationships" className="form-label">Known Relationships</label>
+                <textarea
+                  id="knownRelationships" name="knownRelationships"
+                  placeholder="List any known relationships with legislators, committee members, or agency contacts..."
+                  value={firmData.knownRelationships}
+                  onChange={handleFirmInputChange}
+                  className="form-input form-textarea"
+                  rows="3"
+                />
+              </div>
+
               {scanError && <p className="form-error">{scanError}</p>}
             </form>
           </div>
         )}
 
-        {/* ═══════════════ Step 3: Invite Team ═══════════════ */}
+        {/* ═══════════════ Step 3: AI-Assisted NDAA Submission ═══════════════ */}
         {step === 3 && (
+          <div className="onboarding-step fadeSlideUp">
+            <div className="step-icon">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <rect x="8" y="8" width="48" height="48" rx="8" fill="#E8EDF5" />
+                <path d="M22 22H42M22 32H36M22 42H30" stroke="#01226A" strokeWidth="2.5" strokeLinecap="round" />
+                <circle cx="42" cy="38" r="8" fill="#3A6FF7" opacity="0.2" />
+                <path d="M39 38L41 40L45 36" stroke="#3A6FF7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <h1 className="step-title">AI-Assisted Submission</h1>
+            <p className="step-subtitle">
+              Based on your firm's details, we'll generate a draft NDAA submission request to get you started.
+            </p>
+
+            {/* Submission Type Selector */}
+            <div className="ndaa-section">
+              <div className="form-group">
+                <label className="form-label">Submission Request Type</label>
+                <div className="ndaa-type-grid">
+                  {["CDS Appropriations", "NDAA Authorization", "Defense Supplemental", "Agency Report Language"].map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      className={`ndaa-type-btn ${submissionType === type ? "ndaa-type-btn--active" : ""}`}
+                      onClick={() => setSubmissionType(type)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        {submissionType === type ? (
+                          <><circle cx="8" cy="8" r="7" fill="currentColor" opacity="0.15" stroke="currentColor" strokeWidth="1.5" />
+                          <path d="M5 8L7 10L11 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></>
+                        ) : (
+                          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
+                        )}
+                      </svg>
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Firm context summary */}
+              <div className="ndaa-context">
+                <div className="ndaa-context-title">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M8 5V8.5M8 11V11.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                  Context from your firm profile
+                </div>
+                <div className="ndaa-context-chips">
+                  {firmData.name && <span className="ndaa-chip">{firmData.name}</span>}
+                  {firmData.topicInterests && <span className="ndaa-chip">{firmData.topicInterests}</span>}
+                  {firmData.desiredAskAmount && (
+                    <span className="ndaa-chip">${Number(firmData.desiredAskAmount).toLocaleString()}</span>
+                  )}
+                  {firmData.knownRelationships && (
+                    <span className="ndaa-chip">Relationships noted</span>
+                  )}
+                  {firmData.priorEngagements && (
+                    <span className="ndaa-chip">Prior engagements noted</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Generate button */}
+              {!ndaaGenerated && (
+                <button
+                  type="button"
+                  className="ndaa-generate-btn"
+                  onClick={generateNDAALanguage}
+                  disabled={ndaaLoading}
+                >
+                  {ndaaLoading ? (
+                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span className="spinner ndaa-spinner" />
+                      Generating NDAA language...
+                    </span>
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 2L10 6L14 7L10 8L8 12L6 8L2 7L6 6L8 2Z" fill="currentColor" />
+                      </svg>
+                      Generate Draft {submissionType} Language
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Generated NDAA output */}
+              {ndaaGenerated && (
+                <div className="ndaa-output">
+                  <div className="ndaa-output-header">
+                    <div className="ndaa-output-badge">
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 2L10 6L14 7L10 8L8 12L6 8L2 7L6 6L8 2Z" fill="currentColor" />
+                      </svg>
+                      AI-Generated Draft
+                    </div>
+                    <button
+                      type="button"
+                      className="ndaa-regenerate-btn"
+                      onClick={generateNDAALanguage}
+                      disabled={ndaaLoading}
+                    >
+                      {ndaaLoading ? "Regenerating..." : "Regenerate"}
+                    </button>
+                  </div>
+                  <textarea
+                    className="form-input form-textarea ndaa-textarea"
+                    value={ndaaLanguage}
+                    onChange={(e) => setNdaaLanguage(e.target.value)}
+                    rows="12"
+                  />
+                  <p className="ndaa-edit-hint">
+                    You can edit this draft directly. It will be saved with your firm profile for use in submissions.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════ Step 4: Invite Team ═══════════════ */}
+        {step === 4 && (
           <div className="onboarding-step fadeSlideUp">
             <h1 className="step-title">Invite Your Team</h1>
             <p className="step-subtitle">
@@ -489,8 +741,8 @@ const OnboardingPage = () => {
           </div>
         )}
 
-        {/* ═══════════════ Step 4: Choose Plan ═══════════════ */}
-        {step === 4 && (
+        {/* ═══════════════ Step 5: Choose Plan ═══════════════ */}
+        {step === 5 && (
           <div className="onboarding-step fadeSlideUp">
             <h1 className="step-title">Choose Your Plan</h1>
             <p className="step-subtitle">
@@ -535,8 +787,8 @@ const OnboardingPage = () => {
           </div>
         )}
 
-        {/* ═══════════════ Step 5: Success ═══════════════ */}
-        {step === 5 && (
+        {/* ═══════════════ Step 6: Success ═══════════════ */}
+        {step === 6 && (
           <div className="onboarding-step fadeSlideUp">
             <div className="success-animation">
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
@@ -561,6 +813,20 @@ const OnboardingPage = () => {
                   <span className="detail-value">{firmData.ldaRegistrationId}</span>
                 </div>
               )}
+              {submissionType && (
+                <div className="detail-item">
+                  <span className="detail-label">Submission Type:</span>
+                  <span className="detail-value">{submissionType}</span>
+                </div>
+              )}
+              {firmData.desiredAskAmount && (
+                <div className="detail-item">
+                  <span className="detail-label">Ask Amount:</span>
+                  <span className="detail-value">
+                    ${Number(firmData.desiredAskAmount).toLocaleString()}
+                  </span>
+                </div>
+              )}
               {selectedPlan && (
                 <div className="detail-item">
                   <span className="detail-label">Plan:</span>
@@ -577,6 +843,12 @@ const OnboardingPage = () => {
                   </span>
                 </div>
               )}
+              {ndaaGenerated && (
+                <div className="detail-item">
+                  <span className="detail-label">NDAA Draft:</span>
+                  <span className="detail-value" style={{ color: "var(--success)" }}>Generated</span>
+                </div>
+              )}
             </div>
 
             <p className="success-cta-text">
@@ -591,17 +863,20 @@ const OnboardingPage = () => {
           {step > 1 && (
             <button onClick={handlePrev} className="btn-secondary">Back</button>
           )}
-          {step < 5 && (
+          {step < TOTAL_STEPS && (
             <>
               {step === 3 && (
-                <button onClick={() => setStep(4)} className="btn-secondary">Skip for Now</button>
+                <button onClick={() => setStep(4)} className="btn-secondary">Skip NDAA</button>
+              )}
+              {step === 4 && (
+                <button onClick={() => setStep(5)} className="btn-secondary">Skip for Now</button>
               )}
               <button onClick={handleNext} className="btn-primary">
                 {step === 1 ? "Get Started" : "Next"}
               </button>
             </>
           )}
-          {step === 5 && (
+          {step === TOTAL_STEPS && (
             <button onClick={handleComplete} className="btn-primary btn-large" disabled={setupLoading}>
               {setupLoading ? (
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>

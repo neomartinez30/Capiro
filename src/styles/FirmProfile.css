@@ -130,3 +130,34 @@
 .status-badge--draft { background: rgba(59,130,246,0.1); color: #3B82F6; }
 .tag--xs { font-size: 10px; padding: 1px 5px; border: none; background: var(--bg-soft); color: var(--text-2); border-radius: 3px; margin: 1px; }
 .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .firm-profile { padding: 16px; }
+  .firm-hero { flex-direction: column; align-items: flex-start; padding: 20px; }
+  .firm-hero__stats { width: 100%; }
+  .stat-box { flex: 1; min-width: 0; }
+  .firm-card-grid { grid-template-columns: 1fr; }
+  .info-grid { grid-template-columns: 1fr; }
+  .team-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .table-header,
+  .table-row { grid-template-columns: 2fr 1fr 1fr; }
+  .table-header > :nth-child(n+4),
+  .table-row > :nth-child(n+4) { display: none; }
+  .genai-modal { width: 95vw; max-width: 560px; }
+}
+@media (max-width: 600px) {
+  .firm-profile { padding: 12px; }
+  .firm-hero__content { flex-direction: column; align-items: flex-start; }
+  .firm-hero__stats { flex-wrap: wrap; gap: 8px; }
+  .stat-box { flex: 1 1 calc(50% - 4px); }
+  .firm-hero__info h1 { font-size: 18px; }
+  .section-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .section-tab { white-space: nowrap; padding: 10px 14px; font-size: 13px; }
+  .team-grid { grid-template-columns: 1fr; }
+  .table-header,
+  .table-row { grid-template-columns: 2fr 1fr; }
+  .table-header > :nth-child(n+3),
+  .table-row > :nth-child(n+3) { display: none; }
+  .clients-table { overflow-x: auto; }
+}

@@ -16,7 +16,7 @@
 
 .onboarding-wrapper {
   width: 100%;
-  max-width: 520px;
+  max-width: 580px;
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
@@ -902,6 +902,181 @@
 }
 
 /* ─────────────────────────────────────────────────────── */
+/* NDAA AI-Assisted Submission Section (Step 3) */
+/* ─────────────────────────────────────────────────────── */
+
+.ndaa-section {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: slideUp 0.6s var(--ease-out) 0.35s backwards;
+}
+
+.ndaa-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ndaa-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-system);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  text-align: left;
+}
+
+.ndaa-type-btn:hover {
+  border-color: var(--signal-blue);
+  background: var(--signal-soft);
+  color: var(--signal-blue);
+}
+
+.ndaa-type-btn--active {
+  border-color: var(--signal-blue);
+  background: var(--signal-soft);
+  color: var(--signal-blue);
+  font-weight: 600;
+}
+
+.ndaa-context {
+  padding: 14px;
+  background: rgba(58, 111, 247, 0.04);
+  border: 1px solid rgba(58, 111, 247, 0.12);
+  border-radius: var(--radius-md);
+}
+
+.ndaa-context-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+
+.ndaa-context-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ndaa-chip {
+  padding: 4px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.ndaa-generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #7C3AED, var(--signal-blue));
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-system);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.ndaa-generate-btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+.ndaa-generate-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ndaa-spinner {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+}
+
+.ndaa-output {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideUp 0.4s var(--ease-out);
+}
+
+.ndaa-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ndaa-output-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #7C3AED;
+  padding: 4px 10px;
+  background: rgba(124, 58, 237, 0.08);
+  border-radius: var(--radius-full);
+}
+
+.ndaa-regenerate-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-system);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.ndaa-regenerate-btn:hover:not(:disabled) {
+  border-color: var(--signal-blue);
+  color: var(--signal-blue);
+  background: var(--signal-soft);
+}
+
+.ndaa-textarea {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  line-height: 1.7;
+  min-height: 240px;
+  resize: vertical;
+}
+
+.ndaa-edit-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  margin: 0;
+  text-align: center;
+}
+
+/* ─────────────────────────────────────────────────────── */
 /* Responsive design */
 /* ─────────────────────────────────────────────────────── */
 
@@ -945,6 +1120,14 @@
   .btn-primary,
   .btn-secondary {
     width: 100%;
+  }
+
+  .ndaa-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }
 
