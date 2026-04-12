@@ -1216,3 +1216,131 @@
     background-position: 200% 0;
   }
 }
+
+/* ── Topic Tags Input ── */
+.topic-tags-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-1, #fff);
+  border: 1.5px solid var(--border, #dde1e8);
+  border-radius: 10px;
+  min-height: 46px;
+  align-items: center;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+.topic-tags-box:focus-within {
+  border-color: var(--accent, #3A6FF7);
+  box-shadow: 0 0 0 3px rgba(58, 111, 247, 0.1);
+}
+
+.topic-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--accent-bg, #E8EDF5);
+  color: var(--accent, #01226A);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.topic-tag--sm {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.topic-tag__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3, #888);
+  padding: 0;
+  margin-left: 2px;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.topic-tag__remove:hover {
+  color: var(--danger, #EF4444);
+}
+
+.topic-input {
+  flex: 1;
+  min-width: 140px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  padding: 4px 0;
+  color: var(--text-1, #1a1a2e);
+}
+.topic-input::placeholder {
+  color: var(--text-3, #aaa);
+}
+
+.topic-tags-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--bg-1, #fff);
+  border: 1.5px solid var(--border, #dde1e8);
+  border-radius: 10px;
+  min-height: 40px;
+  align-items: center;
+}
+.topic-tags-inline:focus-within {
+  border-color: var(--accent, #3A6FF7);
+}
+.topic-inline-input {
+  flex: 1;
+  min-width: 100px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  padding: 2px 0;
+  color: var(--text-1, #1a1a2e);
+}
+
+.form-hint {
+  font-size: 12.5px;
+  color: var(--text-3, #888);
+  margin: -2px 0 8px;
+}
+
+.topic-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+}
+.topic-suggestions__label {
+  font-size: 12px;
+  color: var(--text-3, #888);
+  margin-right: 4px;
+}
+.topic-suggestion-btn {
+  padding: 3px 10px;
+  font-size: 12px;
+  border: 1px dashed var(--border, #dde1e8);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2, #555);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.topic-suggestion-btn:hover {
+  border-color: var(--accent, #3A6FF7);
+  color: var(--accent, #3A6FF7);
+  background: rgba(58, 111, 247, 0.05);
+}

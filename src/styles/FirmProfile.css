@@ -161,3 +161,35 @@
   .table-row > :nth-child(n+3) { display: none; }
   .clients-table { overflow-x: auto; }
 }
+
+/* ── Engagement Details (from onboarding) ── */
+.info-item--full {
+  grid-column: 1 / -1;
+}
+.firm-topics {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #eee);
+}
+.firm-topics label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-3, #888);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.firm-topics__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag--sm {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--accent-bg, #E8EDF5);
+  color: var(--accent, #01226A);
+  border-radius: 6px;
+}

@@ -1,8 +1,12 @@
 import React from "react";
-import { IconSparkle } from "./Icons";
+import { IconSparkle, IconLightning, IconCircleAlert, IconLightbulb } from "./Icons";
 import { aiInsights } from "../../data/dashboardMock";
 
-const STYLE = { warning: "\u26A1", alert: "\u{1F534}", suggestion: "\u{1F4A1}" };
+const STYLE = {
+  warning: <IconLightning size={16} color="#F59E0B" />,
+  alert: <IconCircleAlert size={16} color="#EF4444" />,
+  suggestion: <IconLightbulb size={16} color="#3A6FF7" />,
+};
 
 export default function InsightsCard() {
   return (

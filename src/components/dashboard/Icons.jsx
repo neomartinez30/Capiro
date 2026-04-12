@@ -66,12 +66,33 @@ export function IconUsers({ size = 18, color = "currentColor" }) {
   return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>);
 }
 
+export function IconHandshake({ size = 18, color = "currentColor" }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><path d="M11 17a4 4 0 01-8 0c0-2 2-4 4-4"/><path d="M13 17a4 4 0 008 0c0-2-2-4-4-4"/><path d="M12 8V2"/><path d="M5.2 11.2L1 7"/><path d="M18.8 11.2L23 7"/><path d="M12 8a3 3 0 100-6 3 3 0 000 6z"/></svg>);
+}
+export function IconPhone({ size = 18, color = "currentColor" }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>);
+}
+export function IconRefresh({ size = 18, color = "currentColor" }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><polyline points="23,4 23,10 17,10"/><polyline points="1,20 1,14 7,14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>);
+}
+export function IconLightning({ size = 18, color = "currentColor" }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/></svg>);
+}
+export function IconCircleAlert({ size = 18, color = "currentColor" }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>);
+}
+export function IconLightbulb({ size = 18, color = "currentColor" }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>);
+}
+
 const ICON_MAP = {
   grid: IconGrid, building: IconBuilding, calendar: IconCalendar, flag: IconFlag,
   file: IconFile, eye: IconEye, workflow: IconWorkflow, chart: IconChart,
   sparkle: IconSparkle, settings: IconSettings, search: IconSearch, bell: IconBell,
   plus: IconPlus, help: IconHelp, chevron: IconChevronDown, check: IconCheck,
   arrowUp: IconArrowUp, arrowDown: IconArrowDown, rss: IconRss, mail: IconMail, users: IconUsers,
+  handshake: IconHandshake, phone: IconPhone, refresh: IconRefresh,
+  lightning: IconLightning, circleAlert: IconCircleAlert, lightbulb: IconLightbulb,
 };
 
 export default function Icon({ name, size, color }) {

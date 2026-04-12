@@ -197,6 +197,37 @@ export default function FirmProfilePage() {
             </div>
           </div>
 
+          {/* Engagement Details — from onboarding */}
+          {(firm.topicInterests?.length > 0 || firm.priorEngagements || firm.desiredAskAmount || firm.knownRelationships || firm.submissionType) && (
+            <div className="firm-card">
+              <h3>Engagement Details</h3>
+              <div className="info-grid">
+                {firm.submissionType && (
+                  <div className="info-item"><label>Submission Type</label><span>{firm.submissionType}</span></div>
+                )}
+                {firm.desiredAskAmount && (
+                  <div className="info-item"><label>Desired Ask Amount</label><span>${Number(firm.desiredAskAmount).toLocaleString()}</span></div>
+                )}
+                {firm.priorEngagements && (
+                  <div className="info-item info-item--full"><label>Prior Engagements</label><span>{firm.priorEngagements}</span></div>
+                )}
+                {firm.knownRelationships && (
+                  <div className="info-item info-item--full"><label>Known Relationships</label><span>{firm.knownRelationships}</span></div>
+                )}
+              </div>
+              {firm.topicInterests?.length > 0 && (
+                <div className="firm-topics">
+                  <label>Policy Topics</label>
+                  <div className="firm-topics__list">
+                    {(Array.isArray(firm.topicInterests) ? firm.topicInterests : firm.topicInterests.split(",").map(t => t.trim()).filter(Boolean)).map(t => (
+                      <span key={t} className="tag tag--sm">{t}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Industry Breakdown */}
           <div className="firm-card">
             <h3>Client Industries</h3>

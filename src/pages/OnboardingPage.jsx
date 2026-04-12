@@ -44,7 +44,7 @@ const OnboardingPage = () => {
     priorEngagements: "",
     desiredAskAmount: "",
     knownRelationships: "",
-    topicInterests: "",
+    topicInterests: [],
   });
   const [teamMembers, setTeamMembers] = useState([{ email: "", role: "Lobbyist" }]);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -60,10 +60,8 @@ const OnboardingPage = () => {
   const searchRef = useRef(null);
   const searchTimerRef = useRef(null);
 
-  // AI NDAA state (Step 3)
-  const [ndaaLanguage, setNdaaLanguage] = useState("");
-  const [ndaaLoading, setNdaaLoading] = useState(false);
-  const [ndaaGenerated, setNdaaGenerated] = useState(false);
+  // Topics tag input (Step 3)
+  const [topicInput, setTopicInput] = useState("");
   const [submissionType, setSubmissionType] = useState("CDS Appropriations");
 
   // Close dropdown on outside click
@@ -167,34 +165,28 @@ const OnboardingPage = () => {
     setTeamMembers((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Generate AI NDAA language
-  const generateNDAALanguage = useCallback(async () => {
-    setNdaaLoading(true);
-    setNdaaGenerated(false);
-    try {
-      // Build a contextual NDAA draft from firm details
-      const firmName = firmData.name || "the firm";
-      const topics = firmData.topicInterests || "government affairs";
-      const priorWork = firmData.priorEngagements || "previous legislative engagements";
-      const askAmount = firmData.desiredAskAmount
-        ? `$${Number(firmData.desiredAskAmount).toLocaleString()}`
-        : "the requested amount";
-      const relationships = firmData.knownRelationships || "key congressional stakeholders";
-
-      // Simulate AI generation (in production this would call Bedrock)
-      await new Promise(r => setTimeout(r, 1800));
-
-      const draft = `SECTION 1. SHORT TITLE.\n\nThis section may be cited as the "${firmName} Defense Authorization Request".\n\nSECTION 2. PURPOSE.\n\nThe purpose of this submission is to request authorization and appropriation of ${askAmount} for programs and activities related to ${topics}, in alignment with the National Defense Authorization Act (NDAA) for Fiscal Year 2027.\n\nSECTION 3. BACKGROUND AND JUSTIFICATION.\n\n${firmName} has extensive experience in ${priorWork}, with established relationships with ${relationships}. This request addresses critical needs in the following areas:\n\n(a) PROGRAM AUTHORIZATION.—The Secretary of Defense is authorized to carry out programs related to ${topics} as described in this submission.\n\n(b) FUNDING AUTHORIZATION.—There is authorized to be appropriated ${askAmount} for fiscal year 2027 for the programs described in subsection (a).\n\n(c) REPORTING REQUIREMENT.—Not later than 180 days after the date of enactment of this Act, the Secretary shall submit to the congressional defense committees a report on the implementation of programs authorized under this section.\n\nSECTION 4. AUTHORIZATION OF APPROPRIATIONS.\n\nThere is authorized to be appropriated to the Department of Defense ${askAmount} for fiscal year 2027 for the purpose of carrying out the activities described in this submission.`;
-
-      setNdaaLanguage(draft);
-      setNdaaGenerated(true);
-    } catch (err) {
-      console.error("NDAA generation failed:", err);
-      setScanError("Failed to generate NDAA language. Please try again.");
-    } finally {
-      setNdaaLoading(false);
+  // Topic tag helpers
+  const handleAddTopic = useCallback(() => {
+    const trimmed = topicInput.trim();
+    if (trimmed && !firmData.topicInterests.includes(trimmed)) {
+      setFirmData(prev => ({ ...prev, topicInterests: [...prev.topicInterests, trimmed] }));
     }
-  }, [firmData]);
+    setTopicInput("");
+  }, [topicInput, firmData.topicInterests]);
+
+  const handleRemoveTopic = useCallback((topic) => {
+    setFirmData(prev => ({ ...prev, topicInterests: prev.topicInterests.filter(t => t !== topic) }));
+  }, []);
+
+  const handleTopicKeyDown = useCallback((e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      handleAddTopic();
+    }
+    if (e.key === "Backspace" && !topicInput && firmData.topicInterests.length) {
+      setFirmData(prev => ({ ...prev, topicInterests: prev.topicInterests.slice(0, -1) }));
+    }
+  }, [topicInput, firmData.topicInterests, handleAddTopic]);
 
   // Navigation
   const handleNext = useCallback(() => {
@@ -236,7 +228,6 @@ const OnboardingPage = () => {
           topicInterests: firmData.topicInterests,
           plan: selectedPlan,
           teamMembers: teamMembers.filter((m) => m.email.trim()),
-          ndaaLanguage: ndaaLanguage || null,
           submissionType: submissionType || null,
         },
       });
@@ -269,7 +260,7 @@ const OnboardingPage = () => {
 
     completeOnboarding({ id: firmId, name: firmData.name });
     navigate("/app");
-  }, [firmData, selectedPlan, teamMembers, selectedFirm, ndaaLanguage, submissionType, user, completeOnboarding, navigate]);
+  }, [firmData, selectedPlan, teamMembers, selectedFirm, submissionType, user, completeOnboarding, navigate]);
 
   const userName = user?.name || "there";
 
@@ -544,13 +535,23 @@ const OnboardingPage = () => {
                 </div>
                 <div className="form-group form-group--half">
                   <label htmlFor="topicInterests" className="form-label">Topic Interests</label>
-                  <input
-                    id="topicInterests" name="topicInterests"
-                    placeholder="e.g., Defense, Healthcare, Energy"
-                    value={firmData.topicInterests}
-                    onChange={handleFirmInputChange}
-                    className="form-input"
-                  />
+                  <div className="topic-tags-inline">
+                    {firmData.topicInterests.map(tag => (
+                      <span key={tag} className="topic-tag topic-tag--sm">
+                        {tag}
+                        <button type="button" onClick={() => handleRemoveTopic(tag)} className="topic-tag__remove" aria-label={`Remove ${tag}`}>&times;</button>
+                      </span>
+                    ))}
+                    <input
+                      id="topicInterests"
+                      placeholder={firmData.topicInterests.length === 0 ? "e.g., Defense, Healthcare, Energy" : "Add more..."}
+                      value={topicInput}
+                      onChange={(e) => setTopicInput(e.target.value)}
+                      onKeyDown={handleTopicKeyDown}
+                      onBlur={handleAddTopic}
+                      className="topic-inline-input"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -571,7 +572,7 @@ const OnboardingPage = () => {
           </div>
         )}
 
-        {/* ═══════════════ Step 3: AI-Assisted NDAA Submission ═══════════════ */}
+        {/* ═══════════════ Step 3: Topics & Submission Type ═══════════════ */}
         {step === 3 && (
           <div className="onboarding-step fadeSlideUp">
             <div className="step-icon">
@@ -582,9 +583,9 @@ const OnboardingPage = () => {
                 <path d="M39 38L41 40L45 36" stroke="#3A6FF7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <h1 className="step-title">AI-Assisted Submission</h1>
+            <h1 className="step-title">Topics & Submission Type</h1>
             <p className="step-subtitle">
-              Based on your firm's details, we'll generate a draft NDAA submission request to get you started.
+              Add the policy topics your firm focuses on and select a submission type.
             </p>
 
             {/* Submission Type Selector */}
@@ -613,84 +614,49 @@ const OnboardingPage = () => {
                 </div>
               </div>
 
-              {/* Firm context summary */}
-              <div className="ndaa-context">
-                <div className="ndaa-context-title">
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                    <path d="M8 5V8.5M8 11V11.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                  Context from your firm profile
-                </div>
-                <div className="ndaa-context-chips">
-                  {firmData.name && <span className="ndaa-chip">{firmData.name}</span>}
-                  {firmData.topicInterests && <span className="ndaa-chip">{firmData.topicInterests}</span>}
-                  {firmData.desiredAskAmount && (
-                    <span className="ndaa-chip">${Number(firmData.desiredAskAmount).toLocaleString()}</span>
-                  )}
-                  {firmData.knownRelationships && (
-                    <span className="ndaa-chip">Relationships noted</span>
-                  )}
-                  {firmData.priorEngagements && (
-                    <span className="ndaa-chip">Prior engagements noted</span>
-                  )}
+              {/* Topic Tags Input */}
+              <div className="form-group">
+                <label className="form-label">Policy Topics</label>
+                <p className="form-hint">Press Enter or comma to add a topic. These will appear on your firm profile.</p>
+                <div className="topic-tags-box">
+                  {firmData.topicInterests.map(tag => (
+                    <span key={tag} className="topic-tag">
+                      {tag}
+                      <button type="button" onClick={() => handleRemoveTopic(tag)} className="topic-tag__remove" aria-label={`Remove ${tag}`}>
+                        <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                          <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    className="topic-input"
+                    placeholder={firmData.topicInterests.length === 0 ? "e.g., Defense, Healthcare, Energy..." : "Add another topic..."}
+                    value={topicInput}
+                    onChange={(e) => setTopicInput(e.target.value)}
+                    onKeyDown={handleTopicKeyDown}
+                    onBlur={handleAddTopic}
+                  />
                 </div>
               </div>
 
-              {/* Generate button */}
-              {!ndaaGenerated && (
-                <button
-                  type="button"
-                  className="ndaa-generate-btn"
-                  onClick={generateNDAALanguage}
-                  disabled={ndaaLoading}
-                >
-                  {ndaaLoading ? (
-                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span className="spinner ndaa-spinner" />
-                      Generating NDAA language...
-                    </span>
-                  ) : (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M8 2L10 6L14 7L10 8L8 12L6 8L2 7L6 6L8 2Z" fill="currentColor" />
-                      </svg>
-                      Generate Draft {submissionType} Language
-                    </>
-                  )}
-                </button>
-              )}
-
-              {/* Generated NDAA output */}
-              {ndaaGenerated && (
-                <div className="ndaa-output">
-                  <div className="ndaa-output-header">
-                    <div className="ndaa-output-badge">
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                        <path d="M8 2L10 6L14 7L10 8L8 12L6 8L2 7L6 6L8 2Z" fill="currentColor" />
-                      </svg>
-                      AI-Generated Draft
-                    </div>
+              {/* Quick-add suggestions */}
+              <div className="topic-suggestions">
+                <span className="topic-suggestions__label">Popular topics:</span>
+                {["Defense", "Healthcare", "Energy", "Technology", "Agriculture", "Education", "Transportation", "Homeland Security"].map(t => (
+                  !firmData.topicInterests.includes(t) && (
                     <button
+                      key={t}
                       type="button"
-                      className="ndaa-regenerate-btn"
-                      onClick={generateNDAALanguage}
-                      disabled={ndaaLoading}
+                      className="topic-suggestion-btn"
+                      onClick={() => setFirmData(prev => ({ ...prev, topicInterests: [...prev.topicInterests, t] }))}
                     >
-                      {ndaaLoading ? "Regenerating..." : "Regenerate"}
+                      + {t}
                     </button>
-                  </div>
-                  <textarea
-                    className="form-input form-textarea ndaa-textarea"
-                    value={ndaaLanguage}
-                    onChange={(e) => setNdaaLanguage(e.target.value)}
-                    rows="12"
-                  />
-                  <p className="ndaa-edit-hint">
-                    You can edit this draft directly. It will be saved with your firm profile for use in submissions.
-                  </p>
-                </div>
-              )}
+                  )
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -843,11 +809,12 @@ const OnboardingPage = () => {
                   </span>
                 </div>
               )}
-              {ndaaGenerated && (
+              {firmData.topicInterests.length > 0 && (
                 <div className="detail-item">
-                  <span className="detail-label">NDAA Draft:</span>
-                  <span className="detail-value" style={{ color: "var(--success)" }}>Generated</span>
+                  <span className="detail-label">Topics:</span>
+                  <span className="detail-value">{firmData.topicInterests.join(", ")}</span>
                 </div>
+              )}
               )}
             </div>
 
@@ -866,7 +833,7 @@ const OnboardingPage = () => {
           {step < TOTAL_STEPS && (
             <>
               {step === 3 && (
-                <button onClick={() => setStep(4)} className="btn-secondary">Skip NDAA</button>
+                <button onClick={() => setStep(4)} className="btn-secondary">Skip Topics</button>
               )}
               {step === 4 && (
                 <button onClick={() => setStep(5)} className="btn-secondary">Skip for Now</button>

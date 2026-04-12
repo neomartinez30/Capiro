@@ -1,7 +1,13 @@
 import React from "react";
+import { IconHandshake, IconPhone, IconFile, IconRefresh } from "./Icons";
 import { recentActivity } from "../../data/dashboardMock";
 
-const TYPE_ICONS = { meeting: "\u{1F91D}", call: "\u{1F4DE}", filing: "\u{1F4C4}", update: "\u{1F504}" };
+const TYPE_ICONS = {
+  meeting: <IconHandshake size={16} color="#3A6FF7" />,
+  call: <IconPhone size={16} color="#10B981" />,
+  filing: <IconFile size={16} color="#F59E0B" />,
+  update: <IconRefresh size={16} color="#8B5CF6" />,
+};
 
 export default function ActivityCard() {
   return (
