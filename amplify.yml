@@ -31,3 +31,6 @@ customRules:
   - source: /lda-api/<*>
     target: https://lda.senate.gov/api/v1/<*>
     status: '200'
+  - source: '</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>'
+    target: /index.html
+    status: '200'

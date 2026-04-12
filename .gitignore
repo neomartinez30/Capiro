@@ -28,6 +28,7 @@ Thumbs.db
 
 # Vite
 .vite/
+vite.config.js.timestamp-*
 
 # Debug logs
 npm-debug.log*
